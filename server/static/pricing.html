@@ -1,0 +1,70 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>369 Studio — Pricing</title>
+<link rel="stylesheet" href="/static/369.css">
+<style>
+.pwrap{max-width:1180px;margin:0 auto;padding:40px clamp(16px,4vw,30px) 80px}
+.phead{text-align:center;max-width:720px;margin:0 auto}
+.phead h1{font-size:clamp(30px,5vw,46px);margin-top:10px}
+.toggle{display:inline-flex;gap:4px;margin:26px auto 6px;background:var(--panel2);border:1px solid var(--line2);border-radius:999px;padding:4px}
+.toggle button{padding:8px 18px;border-radius:999px;font-weight:700;font-size:13px;color:var(--muted)}
+.toggle button.on{background:var(--pink);color:#fff}
+.save{background:var(--pink);color:#fff;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;margin-left:6px}
+.tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:36px}
+@media(max-width:920px){.tiers{grid-template-columns:repeat(2,1fr)}}@media(max-width:640px){.tiers{grid-template-columns:1fr}}
+.tier{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;position:relative}
+.tier.pop{border-color:var(--pink);box-shadow:0 0 0 1px var(--pink),0 24px 60px -30px var(--pink)}
+.pop-tag{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--pink);color:#fff;font-size:10px;font-weight:800;letter-spacing:.06em;padding:4px 12px;border-radius:999px;text-transform:uppercase}
+.tier .n{display:flex;justify-content:space-between;align-items:center;font-weight:800;letter-spacing:.05em;text-transform:uppercase;font-size:13px}
+.tier .n .num{color:var(--pink);font-family:var(--mono);font-size:12px}
+.tier .d{color:var(--muted);font-size:12.5px;margin-top:6px;min-height:34px}
+.price{margin:14px 0 4px;display:flex;align-items:baseline;gap:8px}
+.price .was{color:var(--pink);text-decoration:line-through;font-weight:700}
+.price .now{font-family:var(--disp);font-weight:800;font-size:34px}.price .per{color:var(--muted);font-size:13px}
+.billed{color:var(--faint);font-size:11.5px}
+.tier ul{list-style:none;padding:0;margin:16px 0 0;border-top:1px solid var(--line);padding-top:14px}
+.tier li{display:flex;gap:8px;font-size:13px;margin:9px 0;color:var(--muted)}.tier li b{color:var(--text);font-weight:700}
+.tier .cta{margin-top:16px;width:100%}
+</style></head>
+<body>
+<div id="shell"></div><div class="glow"></div>
+<div class="frame"><div class="z"><div class="pwrap">
+  <div class="phead">
+    <div class="eyebrow pink">369 Studio Membership</div>
+    <h1>Work at the level<br>you aspire to.</h1>
+    <p class="sub" style="margin-top:12px">Nine memberships. Every premium model, every workflow, at the scale your work demands.</p>
+    <div class="toggle"><button id="ann" class="on" onclick="setP('ann')">Annual <span class="save">SAVE 58%</span></button><button id="mon" onclick="setP('mon')">Monthly</button></div>
+    <div class="sub" style="font-size:11.5px" id="pnote">58% off every renewal, for as long as you stay subscribed.</div>
+  </div>
+  <div class="tiers" id="tiers"></div>
+</div></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="/config.js"></script><script src="/static/shell.js"></script>
+<script>
+var MODE='ann';
+var T=[
+ ["Mini","The lightweight starting point for casual creating.",7,15,76,"8,000",["8,000 credits per month","Priority support","All core apps"]],
+ ["Starter","A little more room to explore and create.",20,47,237,"16,450",["Everything in Mini","16,450 credits per month","Higher resolution renders"]],
+ ["Pro","Our most popular plan. Everything you need to create at scale.",41,97,489,"30,000",["All core features","30,000 credits per month","All premium models","Identity library"],true],
+ ["Premium","Serious output for teams and heavy creators.",83,197,996,"60,000",["Everything in Pro","60,000 credits per month","Batch rendering"]],
+ ["Ultra","High-volume production without the wait.",125,297,1500,"90,000",["Everything in Premium","90,000 credits per month","Priority queue"]],
+ ["Mega","Studio-scale creation.",167,397,2004,"125,000",["Everything in Ultra","125,000 credits per month","Dedicated support"]],
+ ["Titan","For agencies shipping every day.",251,597,3012,"200,000",["Everything in Mega","200,000 credits per month","Team seats"]],
+ ["Apex","Maximum throughput.",419,997,5028,"350,000",["Everything in Titan","350,000 credits per month","Custom onboarding"]],
+ ["Quantum","Everything, at the highest scale.",629,1497,7548,"550,000",["Everything in Apex","550,000 credits per month","White-glove support","MCP endpoint access"]]
+];
+function setP(m){MODE=m;document.getElementById('ann').classList.toggle('on',m==='ann');document.getElementById('mon').classList.toggle('on',m==='mon');
+  document.getElementById('pnote').textContent=m==='ann'?'58% off every renewal, for as long as you stay subscribed.':'Billed monthly. Switch to annual to save 58%.';render();}
+function render(){ document.getElementById('tiers').innerHTML=T.map(function(t,i){
+  var pop=t[7]?'pop':''; var price=MODE==='ann'?t[2]:t[3];
+  return '<div class="tier '+pop+'">'+(t[7]?'<div class="pop-tag">Most Popular</div>':'')
+   +'<div class="n">'+t[0]+'<span class="num">'+String(i+1).padStart(2,'0')+'</span></div>'
+   +'<div class="d">'+t[1]+'</div>'
+   +'<div class="price">'+(MODE==='ann'?'<span class="was">$'+t[3]+'</span>':'')+'<span class="now">$'+price+'</span><span class="per">/month</span></div>'
+   +'<div class="billed">'+(MODE==='ann'?('Billed annually as $'+t[4]):'Billed monthly')+'</div>'
+   +'<ul>'+t[6].map(f=>'<li>✔ '+f+'</li>').join('')+'</ul>'
+   +'<a class="btn '+(t[7]?'pink':'ghost')+' cta" href="/dashboard">Choose '+t[0]+'</a></div>';
+}).join(''); }
+async function boot(){ await Shell.mount('apps',{seg:'Membership',protected:false}); render(); }
+boot();
+</script></body></html>

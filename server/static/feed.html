@@ -1,0 +1,36 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>369 Studio — Feed</title>
+<link rel="stylesheet" href="/static/369.css">
+<style>
+.masonry{columns:4;column-gap:14px}@media(max-width:1000px){.masonry{columns:3}}@media(max-width:680px){.masonry{columns:2}}
+.post{break-inside:avoid;margin-bottom:14px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--panel)}
+.post .g{width:100%} .post .m{display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:12.5px}
+.post .av{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--violet),var(--pink))}
+.post .lk{margin-left:auto;color:var(--muted)}
+.empty{max-width:520px;margin:8vh auto;text-align:center}
+</style></head>
+<body>
+<div id="shell"></div><div class="glow"></div>
+<div class="frame"><div class="z"><div class="page">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <div><div class="eyebrow">Community</div><h1 style="font-size:24px;margin-top:6px">Feed</h1></div>
+    <a class="btn lime" href="/creator">＋ Post a creation</a>
+  </div>
+  <div class="masonry" id="feed" style="margin-top:20px"></div>
+</div></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="/config.js"></script><script src="/static/shell.js"></script>
+<script>
+var G=["#3a0d1e,#0b1030","#0d2a3a,#111","#2a0e3a,#3a0d1e","#1a2e05,#052a1a","#3a2005,#1a0530","#05203a,#300a1a","#2b1055,#0a1a3a","#3a1a05,#1a3a0a"];
+var H=[240,320,280,360,300,260,340,300,280,320,260,300];
+var NAMES=["aria","maya","kabir","zoya","dev","noor","raj","sana","arjun","tara","vikram","isha"];
+var CAP=["neon heist frame","UGC unbox spot","cyberpunk portrait","product hero shot","drift racing loop","golden-hour ad","anime keyframe","talking-head promo","phonk music cover","noir short still","brand reveal","influencer set"];
+async function boot(){ if(!await Shell.mount('feed',{seg:'Feed'})) return;
+  document.getElementById('feed').innerHTML=Array.from({length:12}).map(function(_,i){
+    return '<div class="post"><div class="g" style="height:'+H[i%H.length]+'px;background:linear-gradient(135deg,'+G[i%G.length]+')"></div>'
+     +'<div class="m"><div class="av"></div><b>@'+NAMES[i%NAMES.length]+'</b><span class="sub">· '+CAP[i%CAP.length]+'</span><span class="lk">♡ '+(12+i*7)+'</span></div></div>';
+  }).join('');
+}
+boot();
+</script></body></html>

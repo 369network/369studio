@@ -1,0 +1,65 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>369 Studio — Dashboard</title>
+<link rel="stylesheet" href="/static/369.css">
+<style>
+.dwrap{display:grid;grid-template-columns:200px 1fr;gap:24px}@media(max-width:760px){.dwrap{grid-template-columns:1fr}}
+.dtabs{display:flex;flex-direction:column;gap:4px}
+.dtabs button{text-align:left;padding:10px 12px;border-radius:10px;font-weight:700;font-size:13px;color:var(--muted)}
+.dtabs button.on{background:var(--panel);color:var(--text);border:1px solid var(--line)}
+.pane{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px}
+.walletbig{font-family:var(--disp);font-weight:800;font-size:40px;color:var(--lime)}
+.led{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px}
+.led td{padding:9px 6px;border-bottom:1px solid var(--line)} .led .c{text-align:right;font-family:var(--mono)}
+.plus{color:var(--lime)} .minus{color:var(--muted)}
+.kv{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.conn{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.conn .st{margin-left:auto;font-size:11px;color:var(--faint)}
+</style></head>
+<body>
+<div id="shell"></div><div class="glow"></div>
+<div class="frame"><div class="z"><div class="page">
+  <h1 style="font-size:24px">Dashboard</h1>
+  <div class="dwrap" style="margin-top:18px">
+    <div class="dtabs" id="dtabs"></div>
+    <div id="pane" class="pane"></div>
+  </div>
+</div></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="/config.js"></script><script src="/static/shell.js"></script>
+<script>
+var TABS=["Billing","Account","Connectors","Domains","Bots","Shops"]; var CUR="Billing"; var ME=null;
+async function boot(){ if(!await Shell.mount('apps',{seg:'Dashboard'})) return; ME=Shell.me||{};
+  document.getElementById('dtabs').innerHTML=TABS.map(t=>'<button class="'+(t===CUR?'on':'')+'" onclick="go(\''+t+'\')">'+t+'</button>').join('');
+  render();
+}
+function go(t){CUR=t;document.querySelectorAll('.dtabs button').forEach(b=>b.classList.toggle('on',b.textContent===t));render();}
+function render(){ var p=document.getElementById('pane');
+  if(CUR==="Billing"){
+    var led=(ME.ledger||[]).map(function(l){var neg=(l.credits<0||['video','image','music','text','notes'].includes(l.kind))&&String(l.item||'').indexOf('refund')<0;
+      return '<tr><td>'+(l.item||l.kind||'')+'</td><td class="c '+(neg?'minus':'plus')+'">'+(neg?'':'+')+(l.credits||0)+'</td></tr>';}).join('')||'<tr><td class="sub">No activity yet.</td><td></td></tr>';
+    p.innerHTML='<div class="sub" style="font-size:12px">Credit balance</div><div class="walletbig">'+((ME.wallet||0).toLocaleString())+'</div>'
+      +'<div class="sub" style="font-size:12px">Plan: <b style="color:var(--text);text-transform:capitalize">'+(ME.plan||'free')+'</b></div>'
+      +'<div style="display:flex;gap:10px;margin-top:16px"><a class="btn lime" href="/pricing">Upgrade plan</a><button class="btn ghost" onclick="alert(\'Top-up (Stripe) enable ho jayega jaise hi billing keys Render env me set hongi.\')">Buy credits</button></div>'
+      +'<h3 style="font-size:14px;margin-top:24px">Recent activity</h3><table class="led"><tbody>'+led+'</tbody></table>';
+  } else if(CUR==="Account"){
+    p.innerHTML='<div class="kv"><span class="sub">Name</span><b>'+((ME.name||'—'))+'</b></div>'
+      +'<div class="kv"><span class="sub">Plan</span><b style="text-transform:capitalize">'+(ME.plan||'free')+'</b></div>'
+      +'<div class="kv"><span class="sub">Wallet</span><b>'+((ME.wallet||0).toLocaleString())+' cr</b></div>'
+      +'<button class="btn ghost" style="margin-top:18px" onclick="Shell.signOut()">Sign out</button>';
+  } else if(CUR==="Connectors"){
+    var C=[["Slack","💬"],["Notion","🗒"],["Google Drive","📁"],["GitHub","🐙"],["Stripe","💳"],["Gmail","✉️"],["Trello","📋"],["HubSpot","🧲"]];
+    p.innerHTML='<p class="sub" style="font-size:13px">Connect your tools so employees & apps can act on your data.</p>'
+      +C.map(c=>'<div class="conn"><span style="font-size:18px">'+c[1]+'</span> '+c[0]+'<span class="st">Not connected</span></div>').join('');
+  } else if(CUR==="Domains"){
+    p.innerHTML='<p class="sub" style="font-size:13px">Point a custom domain at sites & apps you build on 369 Studio. Hosting usage is billed by plan.</p>'
+      +'<div class="conn">three69studio.onrender.com <span class="st">Primary · live</span></div>'
+      +'<button class="btn ghost" style="margin-top:16px">＋ Add custom domain</button>';
+  } else if(CUR==="Bots"){
+    p.innerHTML='<p class="sub" style="font-size:13px">Build custom agents (persona + tools) — your own 369 employees.</p><a class="btn lime" style="margin-top:14px" href="/employees">Manage employees</a>';
+  } else if(CUR==="Shops"){
+    p.innerHTML='<p class="sub" style="font-size:13px">Open a shop on your 369 profile to sell digital, physical or services. Earn 1,000 credits when you set up + complete payments.</p><button class="btn ghost" style="margin-top:14px">Set up shop</button>';
+  }
+}
+boot();
+</script></body></html>

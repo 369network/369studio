@@ -1,0 +1,31 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>369 Studio — Apps</title>
+<link rel="stylesheet" href="/static/369.css">
+<style>
+.thumb{aspect-ratio:16/10}
+.thumb .em{font-size:44px;filter:drop-shadow(0 4px 18px rgba(0,0,0,.5))}
+.app-card{cursor:pointer}
+.soon{position:absolute;top:8px;right:8px;background:#000a;border:1px solid var(--line2);color:var(--muted);font-size:9.5px;font-weight:800;letter-spacing:.06em;padding:3px 7px;border-radius:6px;text-transform:uppercase}
+.app-desc{color:var(--faint);font-size:11.5px;padding:0 4px 12px}
+</style></head>
+<body>
+<div id="shell"></div><div class="glow"></div>
+<div class="frame"><div class="z"><div class="page">
+  <h1 style="font-size:24px">Top Apps</h1>
+  <p class="sub" style="margin-top:4px;font-size:13px">Every app is a packaged workflow over the one 369 engine — same credits, same QC gate.</p>
+  <div class="grid g6" id="grid" style="margin-top:18px"></div>
+</div></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="/config.js"></script><script src="/static/shell.js"></script><script src="/static/apps.data.js"></script>
+<script>
+async function boot(){ if(!await Shell.mount('apps',{seg:'Apps'})) return;
+  document.getElementById('grid').innerHTML=APPS369.map(function(a){
+    return '<div class="card app-card" onclick="location.href=\''+a.href+'\'">'
+      +'<div class="thumb"><div class="em">'+a.emoji+'</div>'+(a.live?'':'<span class="soon">Soon</span>')+'</div>'
+      +'<div class="app-label"><span class="rank">#'+a.rank+'</span> '+a.name+'</div>'
+      +'<div class="app-desc">'+a.desc+'</div></div>';
+  }).join('');
+}
+boot();
+</script></body></html>

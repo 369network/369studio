@@ -276,10 +276,50 @@ try:
 except Exception:
     pass
 
+class AgentReq(BaseModel):
+    message:str; persona:str=""
+@app.post("/api/agent")
+def agent(r: AgentReq, authorization: str = Header(None)):
+    """Agent / AI-employee chat lane (text model) + light media-intent routing."""
+    auth_user(bearer(authorization))  # must be signed in
+    sysp = r.persona or ("You are 369 Studio's agent — a fast, friendly creative orchestrator. "
+        "Help the user plan and make images, video, music, ads and copy. Be concise and practical.")
+    reply=""
+    try: reply=_text_gen(sysp+"\n\nUser: "+r.message+"\n\nReply concisely:")
+    except Exception as e: reply="(text engine not configured yet — set TEXT_API_KEY. "+str(e)[:80]+")"
+    action=None
+    m=r.message.lower()
+    if not r.persona:
+        if any(k in m for k in ("video","clip","commercial","ad ","reel","film","movie","animation")):
+            action={"label":"🎬 Make it in Creator","href":"/creator"}
+        elif any(k in m for k in ("image","photo","picture","poster","logo","thumbnail")):
+            action={"label":"🖼 Make it in Creator","href":"/creator"}
+        elif any(k in m for k in ("song","music","track","beat","jingle")):
+            action={"label":"🎵 Make it in Music Studio","href":"/app?app=music"}
+    return {"reply":reply, "action":action}
+
+# ---- page routes (SuperCool-parallel surfaces) ----
+def _page(name): return open(os.path.join(SRV,"static",name),encoding="utf-8").read()
 @app.get("/", response_class=HTMLResponse)
-def home(): return open(os.path.join(SRV,"static","creator.html"),encoding="utf-8").read()
+def home(): return _page("home.html")
+@app.get("/creator", response_class=HTMLResponse)
+def creator(): return _page("creator.html")
+@app.get("/apps", response_class=HTMLResponse)
+def appsgrid(): return _page("apps.html")
 @app.get("/app", response_class=HTMLResponse)
-def appspage(): return open(os.path.join(SRV,"static","app.html"),encoding="utf-8").read()
+def appspage(): return _page("app.html")
+@app.get("/employees", response_class=HTMLResponse)
+def employees(): return _page("employees.html")
+@app.get("/agency", response_class=HTMLResponse)
+def agency(): return _page("agency.html")
+@app.get("/feed", response_class=HTMLResponse)
+def feed(): return _page("feed.html")
+@app.get("/watch", response_class=HTMLResponse)
+def watch(): return _page("watch.html")
+@app.get("/pricing", response_class=HTMLResponse)
+def pricing(): return _page("pricing.html")
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard(): return _page("dashboard.html")
 @app.get("/config.js")
 def cfg(): return HTMLResponse(f'window.SUPA_URL="{SUPA_URL}";window.SUPA_ANON="{SUPA_ANON}";', media_type="application/javascript")
 app.mount("/static", StaticFiles(directory=os.path.join(SRV,"static")), name="static")

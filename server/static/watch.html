@@ -1,0 +1,51 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>369 Watch</title>
+<link rel="stylesheet" href="/static/369.css">
+<style>
+.hero{position:relative;min-height:56vh;border-radius:0;display:flex;align-items:flex-end;padding:0 clamp(16px,4vw,40px) 40px;overflow:hidden}
+.hero .bg{position:absolute;inset:0;background:linear-gradient(120deg,#2a0e3a,#0b1030 60%,#3a0d1e);}
+.hero .bg::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,var(--bg),transparent 55%),linear-gradient(90deg,rgba(8,8,12,.85),transparent 60%)}
+.hero .in{position:relative;z-index:1;max-width:620px}
+.hero h1{font-size:clamp(34px,6vw,60px)}
+.hero p{color:#d8d8de;margin-top:12px;font-size:15px}
+.hbtns{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.made{position:absolute;right:24px;bottom:34px;z-index:1;font-size:11px;color:var(--muted);background:#0009;border:1px solid var(--line2);padding:6px 10px;border-radius:8px}
+.row{margin-top:26px}.row h3{font-size:16px;margin:0 0 10px}
+.strip{display:flex;gap:14px;overflow-x:auto;padding-bottom:8px}
+.poster{flex:0 0 auto;width:180px;aspect-ratio:2/3;border-radius:12px;position:relative;overflow:hidden;border:1px solid var(--line);display:flex;align-items:flex-end}
+.poster .g{position:absolute;inset:0} .poster .t{position:relative;z-index:1;padding:10px;width:100%;background:linear-gradient(0deg,#000c,transparent)}
+.poster .tt{font-family:var(--wm);font-weight:700;letter-spacing:.06em;font-size:15px} .poster .se{font-size:10.5px;color:var(--muted)}
+.ribbon{position:absolute;top:0;left:0;right:0;z-index:2;background:var(--lime);color:var(--lime-ink);font-size:9px;font-weight:800;text-align:center;padding:3px;letter-spacing:.06em}
+</style></head>
+<body>
+<div id="shell"></div>
+<div class="frame">
+  <div class="hero"><div class="bg"></div>
+    <div class="in"><div class="eyebrow">Featured Series</div>
+      <h1>AFTER HOURS</h1>
+      <p>When the city sleeps, the crew wakes. A neon-soaked heist thriller shot entirely on the 369 engine — identity-locked cast, cinematic grade, zero film crew.</p>
+      <div class="hbtns"><a class="btn lime">▶ Play</a><a class="btn ghost">🎞 Trailer</a><a class="btn ghost">ⓘ More Info</a><a class="btn ghost">🔔 Remind Me</a></div>
+    </div>
+    <div class="made">▦ Made with Advanced Movie Maker</div>
+  </div>
+  <div class="page" id="rows"></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="/config.js"></script><script src="/static/shell.js"></script>
+<script>
+var G=["linear-gradient(135deg,#3a0d1e,#0b1030)","linear-gradient(135deg,#0d2a3a,#111)","linear-gradient(135deg,#2a0e3a,#3a0d1e)","linear-gradient(135deg,#1a2e05,#052a1a)","linear-gradient(135deg,#3a2005,#1a0530)","linear-gradient(135deg,#05203a,#300a1a)"];
+var ROWS=[
+ {h:"369 Originals",items:[["AFTER HOURS","1 Season",1],["REDLINE","1 Season",0],["HISAAB","1 Season",0],["THE RIDER","1 Season",0]]},
+ {h:"Action",items:[["THE LAST LIGHT","1 Season",0],["APOCALYPSE","1 Season",0],["OVERDRIVE","1 Season",0],["NIGHT PROTOCOL","1 Season",0]]},
+ {h:"Made with Marketing Studio",items:[["GLOW UGC","Spots",0],["UNBOXED","Spots",0],["THE PITCH","Spots",0],["SELL OUT","Spots",0]]},
+ {h:"Courses & Classics",items:[["PROMPTCRAFT","Course",0],["SEEDANCE 101","Course",0],["CLASSIC BOOKS","Series",0],["MUSIC FOR WORK","Mix",0]]}
+];
+async function boot(){ if(!await Shell.mount('watch',{seg:'Watch'})) return;
+  document.getElementById('rows').innerHTML=ROWS.map(function(r){ return '<div class="row"><h3>'+r.h+'</h3><div class="strip">'
+    +r.items.map(function(it,i){ return '<div class="poster">'+(it[2]?'<div class="ribbon">Groundbreaking cinematic AI series</div>':'')
+      +'<div class="g" style="background:'+G[i%G.length]+'"></div><div class="t"><div class="tt">'+it[0]+'</div><div class="se">'+it[1]+'</div></div></div>';}).join('')
+    +'</div></div>'; }).join('');
+}
+boot();
+</script></body></html>

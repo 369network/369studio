@@ -1,0 +1,129 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>369 Studio — Agent</title>
+<link rel="stylesheet" href="/static/369.css">
+<style>
+.hero{text-align:center;max-width:900px;margin:0 auto}
+.hero .logo-xl{font-family:var(--wm);font-weight:700;font-size:clamp(30px,6vw,54px);letter-spacing:.16em}
+.hero .logo-xl b{color:var(--lime)}
+.chatbox{max-width:760px;margin:26px auto 0;background:var(--panel);border:1px solid var(--line2);border-radius:20px;padding:16px 16px 12px;box-shadow:0 20px 60px -30px #000}
+.chatbox textarea{background:transparent;border:0;min-height:44px;padding:6px 4px;font-size:15px}
+.chatrow{display:flex;align-items:center;gap:10px;margin-top:8px}
+.chatrow .mdl{margin-left:auto;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.send{width:38px;height:38px;border-radius:50%;background:var(--lime);color:var(--lime-ink);font-size:18px;display:grid;place-items:center}
+.tagline{margin-top:34px;font-family:var(--disp);font-weight:800;font-size:clamp(26px,4.4vw,44px);line-height:1.1;letter-spacing:-.02em}
+.tagline .g{background:linear-gradient(90deg,var(--violet),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+.tagline u{text-decoration:none;border-bottom:3px solid var(--lime);padding-bottom:2px}
+.tagline .sm{display:block;font-size:15px;font-weight:600;color:var(--muted);margin-top:16px;letter-spacing:0}
+.tagline .sm b{color:var(--pink)}
+.emps{max-width:var(--maxw);margin:44px auto 0}
+.emps h3{font-size:16px} .emps .cap{color:var(--muted);font-size:12.5px;margin-top:2px}
+.emp{aspect-ratio:3/4;border-radius:16px;position:relative;overflow:hidden;border:1px solid var(--line);display:flex;align-items:flex-end}
+.emp .bg{position:absolute;inset:0}
+.emp .meta{position:relative;z-index:1;padding:14px;width:100%;background:linear-gradient(0deg,rgba(0,0,0,.85),transparent)}
+.emp .nm{font-weight:800} .emp .role{color:var(--lime);font-size:11.5px;font-weight:700}
+.emp .call{margin-top:8px;display:inline-flex;gap:6px;background:var(--lime);color:var(--lime-ink);font-weight:800;font-size:12px;padding:6px 12px;border-radius:999px}
+/* chat thread */
+.thread{max-width:760px;margin:18px auto 0;text-align:left}
+.bub{padding:12px 14px;border-radius:14px;margin:8px 0;max-width:88%;white-space:pre-wrap}
+.bub.u{background:var(--raise);margin-left:auto} .bub.a{background:var(--panel);border:1px solid var(--line)}
+.bub .act{margin-top:10px}
+</style></head>
+<body>
+<div id="shell"></div>
+<div class="glow"></div>
+<div class="frame"><div class="z">
+
+<!-- SIGN-IN GATE -->
+<div class="gate" id="gate">
+  <div class="logo-xl wm" style="font-size:30px">369<b style="color:var(--lime)">STUDIO</b></div>
+  <div class="eyebrow" style="margin-top:14px">Type one sentence · get any asset</div>
+  <h1 style="font-size:30px;margin-top:8px" id="gate-title">Sign in to create</h1>
+  <p class="sub" style="margin-top:6px">New accounts get <b style="color:var(--lime)">500 free credits</b>.</p>
+  <div class="box">
+    <label>Email</label><input id="email" type="email" placeholder="you@studio.com">
+    <label>Password</label><input id="pass" type="password" placeholder="••••••••">
+    <button class="btn lime" style="width:100%;margin-top:16px" id="go" onclick="doAuth()">Sign in</button>
+    <div class="msg" id="msg"></div>
+    <p class="sub" style="text-align:center;margin-top:12px;font-size:13px">
+      <span id="swap-q">No account?</span> <a href="#" onclick="toggleMode();return false" style="color:var(--lime);font-weight:700" id="swap">Create one</a>
+    </p>
+  </div>
+</div>
+
+<!-- AGENT SURFACE -->
+<div class="page hidden" id="agent">
+  <div class="hero">
+    <div class="logo-xl">369<b>STUDIO</b></div>
+    <div class="chatbox">
+      <textarea id="q" placeholder="Give 369 Studio a task to work on…" rows="1"></textarea>
+      <div class="chatrow">
+        <span style="color:var(--faint)">＋</span><span style="color:var(--faint)">👻</span>
+        <span class="mdl">Claude Fable 5.1 ▾ <span title="voice">🎙</span></span>
+        <button class="send" onclick="ask()">↑</button>
+      </div>
+    </div>
+    <div class="thread" id="thread"></div>
+    <div class="tagline" id="tag">
+      Type one sentence.<br>Get <span class="g">a Hollywood commercial</span><br><u>In minutes.</u>
+      <span class="sm">No one else is <b>even close.</b></span>
+    </div>
+  </div>
+
+  <div class="emps">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between">
+      <div><h3>Your AI employees</h3><div class="cap">Talk face to face. They do the work on your screen and remember you.</div></div>
+      <a href="/employees" class="sub" style="font-size:12.5px">See all →</a>
+    </div>
+    <div class="grid g4" id="emps" style="margin-top:14px"></div>
+  </div>
+</div>
+
+</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="/config.js"></script><script src="/static/shell.js"></script>
+<script src="/static/employees.data.js"></script>
+<script>
+var $=s=>document.querySelector(s); var MODE='in';
+function toggleMode(){MODE=MODE==='in'?'up':'in';
+  $('#gate-title').textContent=MODE==='in'?'Sign in to create':'Create your account';
+  $('#go').textContent=MODE==='in'?'Sign in':'Create account';
+  $('#swap-q').textContent=MODE==='in'?'No account?':'Have an account?';
+  $('#swap').textContent=MODE==='in'?'Create one':'Sign in';}
+async function doAuth(){var m=$('#msg');m.className='msg';m.textContent='…';
+  try{ if(MODE==='in') await Shell.signIn($('#email').value,$('#pass').value);
+       else { await Shell.signUp($('#email').value,$('#pass').value); m.textContent='Account created — signing in…'; await Shell.signIn($('#email').value,$('#pass').value); }
+       boot(); }
+  catch(e){ m.className='msg err'; m.textContent=e.message; }
+}
+async function boot(){
+  var ok=await Shell.mount('agent',{protected:false});
+  if(!ok){ $('#gate').classList.remove('hidden'); $('#agent').classList.add('hidden'); return; }
+  $('#gate').classList.add('hidden'); $('#agent').classList.remove('hidden');
+  renderEmps();
+}
+function renderEmps(){
+  $('#emps').innerHTML=EMPLOYEES.map(function(e){return
+    '<a class="emp" href="/employees?e='+e.id+'"><div class="bg" style="background:'+e.grad+'"></div>'
+    +'<div class="meta"><div class="nm">'+e.name+'</div><div class="role">'+e.role+'</div>'
+    +'<span class="call">🎥 Chat '+e.first+'</span></div></a>';}).join('');
+}
+var q=$('#q'); q&&q.addEventListener('input',function(){this.style.height='auto';this.style.height=this.scrollHeight+'px';});
+async function ask(){
+  var v=$('#q').value.trim(); if(!v)return; $('#q').value=''; $('#q').style.height='auto';
+  $('#tag').classList.add('hidden');
+  var th=$('#thread');
+  th.insertAdjacentHTML('beforeend','<div class="bub u">'+esc(v)+'</div>');
+  var id='a'+Date.now(); th.insertAdjacentHTML('beforeend','<div class="bub a" id="'+id+'">…</div>');
+  th.scrollIntoView({block:'end'});
+  try{
+    var r=await Shell.api('/api/agent',{method:'POST',body:JSON.stringify({message:v})});
+    var html=esc(r.reply||'');
+    if(r.action){ html+='<div class="act"><a class="btn lime" href="'+r.action.href+'">'+r.action.label+'</a></div>'; }
+    document.getElementById(id).innerHTML=html;
+  }catch(e){ document.getElementById(id).innerHTML='<span style="color:var(--crit)">'+e.message+'</span>'; }
+}
+function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+boot();
+</script></body></html>
