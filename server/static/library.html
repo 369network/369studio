@@ -45,7 +45,8 @@
 <script>
 var $=s=>document.querySelector(s); var LIB=[],FILT='all',USED={};
 async function boot(){ if(!await Shell.mount('apps',{seg:'AI Influencer'})) return;
-  LIB=await (await fetch('/static/library/library.json')).json();
+  try{ LIB=await (await fetch('/static/library/library.json')).json(); }
+  catch(e){ LIB=[]; $('#grid').innerHTML='<p class="sub">Character library is loading… if this persists, the library assets are not deployed.</p>'; }
   try{var mine=await Shell.api('/api/characters'); (mine||[]).forEach(c=>{if(c.meta&&c.meta.lib)USED[c.meta.lib]=1;});}catch(e){}
   $('#tabs').innerHTML=[['all','All'],['human','Human'],['animal','Animal'],['fantasy','Fantasy']].map(t=>'<button class="'+(t[0]===FILT?'on':'')+'" onclick="setF(\''+t[0]+'\')">'+t[1]+'</button>').join('');
   render();

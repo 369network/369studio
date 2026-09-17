@@ -37,7 +37,9 @@ async function boot(){ if(!await Shell.mount('apps',{seg:'Apps'})) return;
   $('#tabs').innerHTML='<a href="/creator">🎬 Creator</a>'+APPS.filter(a=>a.id!=='creator').map(a=>'<a href="/app?app='+a.id+'" class="'+(a.id===appId?'on':'')+'">'+a.emoji+' '+a.name+'</a>').join('');
   CUR=APPS.find(a=>a.id===appId)||APPS[0]; $('#kick').textContent=CUR.name; $('#nm').textContent=CUR.name;
   $('#fields').innerHTML=CUR.fields.map(f=>'<div class="field"><label>'+f.label+'</label>'+(f.type==='textarea'?'<textarea id="f-'+f.k+'"></textarea>':'<input id="f-'+f.k+'">')+'</div>').join('');
+  showCost();
 }
+async function showCost(){ try{ var c=await Shell.api('/api/cost',{method:'POST',body:JSON.stringify({mode:CUR.mode,model:CUR.model||'crun_fast',res:CUR.res||'480p',dur:CUR.dur||'4s'})}); $('#cost').textContent=(c.credits||0)+' cr'; }catch(e){ $('#cost').textContent=''; } }
 async function run(){
   var fields={}; CUR.fields.forEach(f=>fields[f.k]=($('#f-'+f.k)||{}).value||'');
   var out=$('#out'); out.classList.add('on'); out.innerHTML='<div style="font-size:26px">⚙️</div><p><b>Submitting…</b></p><div class="pbar"><i id="pb"></i></div>';

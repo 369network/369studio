@@ -46,11 +46,11 @@ for m in M:
     dur=max(4,min(15,int(m['dur']))); ar=m.get('ar','9:16'); res=m.get('res',RES)
     if m.get('mode')=='A':
         imgs=[host(m['first'])]+([host(m['last'])] if m.get('last') else [])
-        body={'model':'bytedance/seedance2-0-fast-i2v','input':{'prompt':prompt,'img_urls':imgs,'resolution':res,'aspect_ratio':ar,'duration':dur,'audio':True}}
+        body={'model':'bytedance/seedance2-0-fast-i2v','input':{'prompt':prompt,'img_urls':imgs,'resolution':res,'aspect_ratio':ar,'duration':dur,'audio':m.get('audio',True)}}
     elif m.get('mode')=='T':  # text-to-video (no refs) — 369 Studio Creator lane
-        body={'model':'bytedance/seedance2-0-fast-t2v','input':{'prompt':prompt,'resolution':res,'aspect_ratio':ar,'duration':dur,'audio':True}}
+        body={'model':'bytedance/seedance2-0-fast-t2v','input':{'prompt':prompt,'resolution':res,'aspect_ratio':ar,'duration':dur,'audio':m.get('audio',True)}}
     else:
-        body={'model':'bytedance/seedance2-0-fast-r2v','input':{'prompt':prompt,'reference_images':[host(r) for r in m['refs'][:9]],'resolution':res,'aspect_ratio':ar,'duration':dur,'audio':True}}
+        body={'model':'bytedance/seedance2-0-fast-r2v','input':{'prompt':prompt,'reference_images':[host(r) for r in m['refs'][:9]],'resolution':res,'aspect_ratio':ar,'duration':dur,'audio':m.get('audio',True)}}
     j=curl(H+['-X','POST','-d',json.dumps(body,ensure_ascii=False),f'{API}/CreateTask'])
     tid=(j.get('data') or {}).get('task_id'); S[sid]={'tid':tid,'submit':j}; json.dump(S,open(sp,'w'),indent=1)
     print('submit',sid,tid or j,flush=True); time.sleep(1)

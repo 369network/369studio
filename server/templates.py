@@ -85,4 +85,6 @@ def apply_template(tid, user_prompt, fields):
             "mode": t["mode"], "model": t["model"], "res": t["res"], "dur": t["dur"], "ar": t["ar"]}
 
 def catalog():
-    return [{"id":k,"name":v["name"],"emoji":v["emoji"],"mode":v["mode"],"fields":v["fields"]} for k,v in TEMPLATES.items()]
+    return [{"id":k,"name":v["name"],"emoji":v["emoji"],"mode":v["mode"],
+             "model":v.get("model","crun_fast"),"res":v.get("res","480p"),"dur":v.get("dur","4s"),
+             "fields":v["fields"]} for k,v in TEMPLATES.items()]

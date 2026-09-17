@@ -24,12 +24,16 @@ SUPA_URL  = os.environ.get("SUPABASE_URL",  "https://jjyguuctlqgvlbzifpuv.supaba
 SUPA_ANON = os.environ.get("SUPABASE_ANON", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqeWd1dWN0bHFndmxiemlmcHV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2NDM4NTMsImV4cCI6MjEwNTIxOTg1M30.omSAlhkDfaZHALUnyXRD7Qdvu76-5kNKNv204MZ6LvM")
 
 # ---- credit model (full model roster, SuperCool-parallel; all route to the Crun engine, price varies) ----
+# NOTE: every video model currently renders on the same Crun Seedance FAST engine, so they
+# are all priced at the Economy rate (1.0) — no premium is charged for output we don't deliver.
+# `free` = 0 (gated to paid plans in generate()). When real Veo/Kling/etc. APIs are wired,
+# raise these mults to match the delivered engine.
 MODEL_MULT = {
-  "frontier":1.4, "crun_fast":1.0, "free":0.0,
-  "seedance25":1.8, "seedance2_mini":0.8, "seedance2_pro":1.6, "seedance2_fast":0.9,
-  "veo31":3.2, "veo31_fast":1.6, "veo31_lite":1.2,
-  "kling_o3_pro":2.4, "kling_o3_std":1.5,
-  "pixverse":0.5, "ltx2_fast":1.1, "pvideo":0.4, "grok":1.0,
+  "frontier":1.0, "crun_fast":1.0, "free":0.0,
+  "seedance25":1.0, "seedance2_mini":1.0, "seedance2_pro":1.0, "seedance2_fast":1.0,
+  "veo31":1.0, "veo31_fast":1.0, "veo31_lite":1.0,
+  "kling_o3_pro":1.0, "kling_o3_std":1.0,
+  "pixverse":1.0, "ltx2_fast":1.0, "pvideo":1.0, "grok":1.0,
 }
 RES_MULT = {"360p":0.7,"480p":1.0,"720p":1.6,"1080p":2.4}
 DUR_BASE = {"4s":128,"5s":160,"6s":192,"8s":256,"10s":320,"12s":384,"15s":480}
@@ -128,7 +132,7 @@ def _text_gen(prompt):
         return (m.get("content") or m.get("reasoning_content") or "").strip()
 
 # ---- render worker ----
-def _render_once(jdir, prompt, mode, res, dur, ar, refs, fields=None):
+def _render_once(jdir, prompt, mode, res, dur, ar, refs, fields=None, audio=True):
     for sub in ("docs","renders","refs"): os.makedirs(os.path.join(jdir,sub),exist_ok=True)
     open(os.path.join(jdir,"docs","p.txt"),"w").write(prompt)
     fields = fields or {}
@@ -149,17 +153,17 @@ def _render_once(jdir, prompt, mode, res, dur, ar, refs, fields=None):
         txt=_text_gen(prompt); out=os.path.join(jdir,"renders","out.txt"); open(out,"w").write(txt); return out
     else:
         if refs:  # reference-to-video (character-sheet identity lock)
-            man=[{"id":"out","mode":"B","dur":int(dur.replace("s","")),"prompt":"docs/p.txt","ar":ar,"res":res,"refs":refs}]
+            man=[{"id":"out","mode":"B","dur":int(dur.replace("s","")),"prompt":"docs/p.txt","ar":ar,"res":res,"refs":refs,"audio":bool(audio)}]
         else:     # text-to-video
-            man=[{"id":"out","mode":"T","dur":int(dur.replace("s","")),"prompt":"docs/p.txt","ar":ar,"res":res}]
+            man=[{"id":"out","mode":"T","dur":int(dur.replace("s","")),"prompt":"docs/p.txt","ar":ar,"res":res,"audio":bool(audio)}]
         json.dump(man,open(os.path.join(jdir,"gen.json"),"w"))
         subprocess.run([sys.executable,os.path.join(ROOT,"tools","run_crun.py"),jdir,"gen.json"],cwd=ROOT,timeout=3000)
         return os.path.join(jdir,"renders","cr_out.mp4")
 
-def run_job(jid, prompt, mode, model, res, dur, ar, refs, template="", fields=None, uid=None, token=None):
+def run_job(jid, prompt, mode, model, res, dur, ar, refs, template="", fields=None, uid=None, token=None, audio=True):
     jdir = os.path.join(JOBS, jid); fields = fields or {}
     try:
-        out = _render_once(jdir, prompt, mode, res, dur, ar, refs, fields)
+        out = _render_once(jdir, prompt, mode, res, dur, ar, refs, fields, audio)
         if not (os.path.exists(out) and os.path.getsize(out)>0):
             _refund(jid); setj(jid,status="failed",err="no output produced"); return
         # QC gate (technical)
@@ -170,7 +174,7 @@ def run_job(jid, prompt, mode, model, res, dur, ar, refs, template="", fields=No
             c=jdb(); r=c.execute("SELECT retried FROM jobs WHERE id=?",(jid,)).fetchone(); c.close()
             if not (r and r["retried"]):
                 setj(jid, retried=1, qc_note="retry: "+q["note"])
-                out = _render_once(jdir+"_r", prompt, mode, res, dur, ar, refs, fields)
+                out = _render_once(jdir+"_r", prompt, mode, res, dur, ar, refs, fields, audio)
                 if os.path.exists(out) and os.path.getsize(out)>0:
                     q = qc_image(out, ar) if mode=="image" else qc_video(out, int(dur.replace("s","")))
         ext = ".png" if mode=="image" else (".mp3" if mode=="music" else (".txt" if mode in ("text","notes") else ".mp4"))
@@ -236,6 +240,12 @@ def generate(r: GenReq, authorization: str = Header(None)):
             if ap:
                 r.prompt=ap["prompt"]; r.mode=ap["mode"]; r.model=ap["model"]; r.res=ap["res"]; r.dur=ap["dur"]; r.ar=ap["ar"]
         except Exception: pass
+    # Free Model is only for active paid plans (matches the UI promise)
+    if r.model == "free":
+        prof = _req("GET","/rest/v1/profiles",t,params=f"?id=eq.{uid}&select=plan")
+        plan = ((prof or [{}])[0] or {}).get("plan","free")
+        if str(plan).lower() in ("", "free", "none", None):
+            raise HTTPException(402, "Free Model requires an active paid plan")
     cr = credits_for(r.mode,r.model,r.res,r.dur)
     # hold credits now (atomic; raises if insufficient)
     try: rpc("spend_credits", t, {"p_amount":cr,"p_item":label_for(r.mode,r.model,r.res,r.dur),"p_kind":r.mode})
@@ -246,7 +256,7 @@ def generate(r: GenReq, authorization: str = Header(None)):
     refs = [os.path.join(ROOT,p) for p in refs]
     c=jdb(); c.execute("INSERT INTO jobs(id,uid,token,ts,status,credits,kind,label,file,err) VALUES(?,?,?,?,?,?,?,?,?,?)",
         (jid,uid,t,int(time.time()),"running",cr,r.mode,label_for(r.mode,r.model,r.res,r.dur),None,None)); c.commit(); c.close()
-    threading.Thread(target=run_job,args=(jid,r.prompt,r.mode,r.model,r.res,r.dur,r.ar,refs,r.template,r.fields,uid,t),daemon=True).start()
+    threading.Thread(target=run_job,args=(jid,r.prompt,r.mode,r.model,r.res,r.dur,r.ar,refs,r.template,r.fields,uid,t,r.audio),daemon=True).start()
     return {"job_id":jid,"credits":cr}
 
 @app.get("/api/job/{jid}")

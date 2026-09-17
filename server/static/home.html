@@ -105,8 +105,8 @@ async function boot(){
   renderEmps();
 }
 function renderEmps(){
-  $('#emps').innerHTML=EMPLOYEES.map(function(e){return
-    '<a class="emp" href="/employees?e='+e.id+'"><div class="bg" style="background:'+e.grad+'"></div>'
+  $('#emps').innerHTML=EMPLOYEES.map(function(e){return ''
+    +'<a class="emp" href="/employees?e='+e.id+'"><div class="bg" style="background:'+e.grad+'"></div>'
     +(e.img?'<img class="bg" src="'+e.img+'" style="object-fit:cover;object-position:top">':'')
     +'<div class="meta"><div class="nm">'+e.name+'</div><div class="role">'+e.role+'</div>'
     +'<span class="call">🎥 Chat '+e.first+'</span></div></a>';}).join('');
