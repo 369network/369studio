@@ -1,0 +1,37 @@
+# 369 Studio — Render.com deploy (always-on container, persistent disk).
+# Steps: push studio369 repo to GitHub → Render → New → Blueprint → pick this repo.
+services:
+  - type: web
+    name: 369studio
+    runtime: docker
+    dockerfilePath: server/Dockerfile
+    dockerContext: .
+    region: singapore
+    plan: starter            # always-on; free plan sleeps (bad for renders)
+    healthCheckPath: /api/apps
+    disk:
+      name: jobs
+      mountPath: /app/server/jobs
+      sizeGB: 5
+    envVars:
+      - key: SUPABASE_URL
+        value: https://jjyguuctlqgvlbzifpuv.supabase.co
+      - key: PUBLIC_URL
+        value: https://369studio.onrender.com
+      # set these as SECRETS in the Render dashboard (not here):
+      - key: SUPABASE_ANON
+        sync: false
+      - key: CRUN_KEY
+        sync: false
+      - key: ATLAS_KEY
+        sync: false
+      - key: SUNOAPI_KEY
+        sync: false
+      - key: GLM_API_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false

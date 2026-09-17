@@ -1,0 +1,15 @@
+# secrets — NEVER commit
+.config/
+*.env
+!tools/keys.env.example
+server/*.db
+server/jobs/
+# renders / heavy media
+projects/*/renders/
+projects/*/final/
+*.mp4
+*.mp3
+*.wav
+__pycache__/
+*.pyc
+*.zip

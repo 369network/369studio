@@ -1,0 +1,550 @@
+{
+ "_comment": "Replaces hub_list_capabilities. Static; refresh weekly. Live Higgsfield unlimited status ALWAYS wins (models_explore unlim:true / web toggle).",
+ "updated": "2026-09-15 rule set v7 (Overnight-17 US benchmark)",
+ "lanes": {
+  "video": {
+   "default": "protoface_h3",
+   "fal_h3": {
+    "vendor": "fal",
+    "endpoints": {
+     "t2v": "minimax/h3/text-to-video",
+     "i2v": "minimax/h3/image-to-video",
+     "r2v": "minimax/h3/reference-to-video"
+    },
+    "resolutions": [
+     "480P",
+     "768P",
+     "2K",
+     "4K"
+    ],
+    "price_usd_per_s": {
+     "480P": 0.05,
+     "768P": 0.06,
+     "2K": 0.13,
+     "4K": 0.16
+    },
+    "duration_s": [
+     4,
+     15
+    ],
+    "aspect_ratios": [
+     "21:9",
+     "16:9",
+     "4:3",
+     "1:1",
+     "3:4",
+     "9:16"
+    ],
+    "prompt_expansion_mode": [
+     "fast",
+     "balanced",
+     "quality"
+    ],
+    "native_audio": true,
+    "notes": "prompt_expansion_mode=balanced == Context-IR. 2K/4K = 768P + upscale in one call. Misspells uncommon words in native typography \u2014 fix in post (post.py textfix), never re-render for a typo. Use only when 2K/4K native is required; 20x pricier than fal_h3_turbo.",
+    "concurrency": 4,
+    "cost_lane": "paid_api_cheap",
+    "enabled": false,
+    "role": "v7.4 DISABLED by Nipam \u2014 Crun Seedance FAST is the only video lane. Re-enable only on his explicit word (emergency: Crun down). "
+   },
+   "higgsfield_kling3": {
+    "vendor": "higgsfield_mcp",
+    "model": "kling3_0",
+    "roles": [
+     "start_image",
+     "end_image"
+    ],
+    "duration_s": [
+     3,
+     15
+    ],
+    "sound": true,
+    "credits_15s_std": 30,
+    "cost_lane": "unlimited_if_active_else_credits",
+    "check": "models_explore action=list unlim=true \u2192 unlim.available"
+   },
+   "higgsfield_seedance2": {
+    "vendor": "higgsfield_mcp",
+    "model": "seedance_2_0",
+    "roles": [
+     "start_image",
+     "end_image",
+     "image_references",
+     "video_references",
+     "audio_references"
+    ],
+    "credits_15s_720p": 67.5,
+    "cost_lane": "credits"
+   },
+   "runpod_h3": {
+    "vendor": "self_hosted",
+    "status": "not_deployed",
+    "native": "768P",
+    "upscale_required": true,
+    "skill": "h3-runpod-lane",
+    "graphs": "knowledge/comfyui-h3-graphs/",
+    "cost_lane": "unlimited_gpu_hour"
+   },
+   "google_flow_veo": {
+    "vendor": "flow-mcp",
+    "status": "dry_run",
+    "cost_lane": "subscription"
+   },
+   "fal_h3_turbo": {
+    "vendor": "fal",
+    "endpoints": {
+     "t2v": "minimax/h3-max-turbo/text-to-video",
+     "i2v": "minimax/h3-max-turbo/image-to-video"
+    },
+    "resolutions": [
+     "480P",
+     "768P",
+     "1080P"
+    ],
+    "price_usd_per_s": {
+     "480P": 0.00625,
+     "768P": 0.01,
+     "1080P": 0.02
+    },
+    "price_after_promo_usd_per_s": {
+     "480P": 0.025,
+     "768P": 0.04,
+     "1080P": 0.08
+    },
+    "promo_ends": "2026-09-14",
+    "duration_s": [
+     4,
+     15
+    ],
+    "prompt_expansion_mode": [
+     "fast",
+     "balanced",
+     "quality"
+    ],
+    "notes": "Post-trained H3 variant (stronger prompt adherence, faster). Default lane from 2026-09-12: 768P for drafts/bulk, 1080P for finals; 2K/4K only via fal_h3 or Regenerate-2K.",
+    "concurrency": 4,
+    "cost_lane": "paid_api_cheap",
+    "enabled": false,
+    "role": "v7.4 DISABLED by Nipam \u2014 Crun Seedance FAST is the only video lane. Re-enable only on his explicit word (emergency: Crun down). "
+   },
+   "topview_h3": {
+    "vendor": "topview-unlimited MCP (Nipam's own, on PC)",
+    "model": "minimax-h3",
+    "resolution_cap": 1440,
+    "duration_s": [
+     5,
+     15
+    ],
+    "refs": "image (first frame) + end_image; multi-ref up to 9 via TopView UI",
+    "sound": true,
+    "queue": "often 100+ deep, 30-60 min/clip \u2014 normal",
+    "protocol": "generate_video(wait=false) \u2192 keep task_id in renders/results.json (status queued) \u2192 check_task later \u2192 download_task \u2192 copy from C:\\Users\\admin\\topview-unlimited-mcp\\topview_output\\ into renders/",
+    "cost_lane": "unlimited",
+    "use": "bulk / drama / anything not time-critical",
+    "disabled": true,
+    "note_disabled": "Removed from the video order 14 Sep (Nipam): TopView = images only."
+   },
+   "topview_wan3": {
+    "vendor": "topview-unlimited MCP",
+    "model": "qwen-wan3.0-video",
+    "resolution_cap": 720,
+    "duration_s": [
+     5,
+     10
+    ],
+    "cost_lane": "unlimited",
+    "disabled": true,
+    "note_disabled": "Removed from the video order 14 Sep (Nipam): TopView = images only."
+   },
+   "topview_seedance25": {
+    "vendor": "topview-unlimited MCP",
+    "model": "seedance-2.5",
+    "resolution_cap": 720,
+    "duration_s": [
+     4,
+     15
+    ],
+    "cost_lane": "unlimited_60day_pack",
+    "disabled": true,
+    "note_disabled": "Removed from the video order 14 Sep (Nipam): TopView = images only."
+   },
+   "speed_default": "fal_h3_turbo",
+   "_rule": "Cost law v7.4 (Nipam, 15 Sep 2026): EVERY video shot \u2192 seedance_fast_crun (Crun bytedance/seedance2-0-fast-r2v, 480p, $0.043/s, 132 cr per 15 s). No viggle, no protoface, no vgenv, no fal, no Atlas unless Nipam says so. Identity = look portrait(s) + set + last-frame ref (\u22649 refs). Per-clip QC (tile + whisper) stays; retakes on the same lane with a fixed prompt. Images stay \u20b90 on the unlimited MCPs. Finals: 480p native \u2192 post upscale to 1080p (ffmpeg lanczos) until a \u20b90 upscaler is wired.",
+   "_drama_rule": "v7.4: drama = Mode C (dialogue, \u22643 shots per \u226415 s clip) + Mode B (action/establishers, keyframe as an extra reference, never as start frame) on Crun Seedance FAST; Mode A = fast-i2v start frame only when p1/p3 match. Costume risk: Seedance may strip/alter clothing on intimate or physical prompts \u2192 keep 'clothes stay on, same outfit' in every prompt and QC every clip; retake with a stronger costume line. Hindi dialogue is weaker on Seedance (3/7 EP4) \u2192 write Hindi lines in Devanagari + Roman, keep them short, expect retakes.",
+   "protoface_h3": {
+    "vendor": "protoface",
+    "model": "minimax/minimax-h3",
+    "endpoint": "POST https://api.protoface.com/v1/run/minimax/minimax-h3 (operation video.general) \u2192 GET /v1/runs/{id}",
+    "qualities": {
+     "480p": {
+      "credits_per_s": 1.0,
+      "refs_included": 0,
+      "ref_extra_credits": 3,
+      "output": "512p"
+     },
+     "768p": {
+      "credits_per_s": 3.6,
+      "refs_included": 5,
+      "ref_extra_credits": 7,
+      "output": "768p"
+     },
+     "2k": {
+      "credits_per_s": 13.0,
+      "refs_included": 5,
+      "ref_extra_credits": 7,
+      "output": "1440p"
+     }
+    },
+    "credit_usd": 0.01,
+    "plan": "Studio Unlimited $29/mo = 3000 credits/mo included (2901 left on 14 Sep 2026, period resets 13 Oct). Beyond that pay-as-you-go 1 cr = $0.01.",
+    "duration_s": [
+     4,
+     15
+    ],
+    "inputs": "reference \u00d79 (images), reference_video \u00d73 (7/13/18 cr per input-second), audio \u00d73, first_frame, last_frame; refs as data URI or public URL \u2264 ~5 MB",
+    "speed_observed": "27 s \u2013 7 min per clip (13 Sep runs)",
+    "cost_lane": "subscription",
+    "notes": "Only full multi-ref H3 API besides TopView. Drama default for identity-locked \u22646 s shots: 768p 6 s + 3 sheets = 21.6 cr \u2248 $0.22 (\u2248138 such clips/month inside the plan). 480p = 6 cr but refs cost 3 cr each extra. Uses the same H3 prompt skeleton; enhance_prompt=false.",
+    "enabled": false,
+    "role": "v7.4 DISABLED by Nipam \u2014 Crun Seedance FAST is the only video lane. Re-enable only on his explicit word (emergency: Crun down). "
+   },
+   "vgenv_h3": {
+    "vendor": "vgenv",
+    "model": "minimax/h3",
+    "endpoint": "POST https://api.vgenv.com/v1/videos \u2192 GET /v1/videos/{id}; OpenAPI at /docs-json",
+    "resolutions": [
+     "480p",
+     "768p"
+    ],
+    "tiers": [
+     "fast",
+     "standard",
+     "quality"
+    ],
+    "price_usd_per_s": {
+     "fast": {
+      "480p": 0.0015,
+      "768p": 0.003
+     },
+     "standard": {
+      "480p": 0.003,
+      "768p": 0.006
+     },
+     "quality": {
+      "480p": 0.006,
+      "768p": 0.012
+     }
+    },
+    "billing": "account bills in CNY (\u00a51.20 per 15 s 768p quality observed = \u00a50.08/s); balance \u00a540.16 on 14 Sep 2026",
+    "duration_s": [
+     4,
+     15
+    ],
+    "inputs": "reference_images \u00d79 OR frame_images (first/last) \u2014 mutually exclusive; reference_video, reference_audio; data URI \u22645 MiB or public URL; upscale 2x surcharge",
+    "speed_observed": "~17 min per 15 s quality clip (13 Sep jobs)",
+    "cost_lane": "paid_api_cheap",
+    "notes": "Cheapest paid H3 with refs. 'fast' tier quality unverified vs turbo \u2014 A/B before bulk. Extras: /v1/h3-prompt-compiler, /v1/prompt-optimization (paid).",
+    "enabled": false,
+    "role": "v7.4 DISABLED by Nipam \u2014 Crun Seedance FAST is the only video lane. Re-enable only on his explicit word (emergency: Crun down). "
+   },
+   "viggle_h3": {
+    "vendor": "viggle (apis.viggle.ai/v1/videos, multipart)",
+    "status": "TESTED 14 Sep \u2014 PASS (quality=high)",
+    "price_usd_per_s": 0.01,
+    "resolution": "768p (768x1344 for 9:16), native audio",
+    "inputs": "prompt + quality(low|high) + duration_s 3\u201315 + resolution 480p|768p|1080p + aspect_ratio; reference_image \u00d74 (mode B) XOR first_frame_image(+last_frame_image) (mode A); poll GET /v1/videos/{id} \u2192 status ready + video_url (short-lived)",
+    "runner": "tools/run_viggle.py <proj> <manifest> [ids] \u2014 PC ONLY (Cloudflare blocks the cloud container); key in .config/keys_viggle.env on the PC",
+    "notes": "A/B vs protoface on EP3 003-03: high = same identity/framing/no cut, line verbatim, $0.05 vs 18 cr ($0.18). low = garbled dialogue \u2192 drafts only. ~2.5 min/clip. FULL EP3 3-way (14 Sep): high 16/16 identity, 0 cuts, 7/9 lines verbatim (one number 2019\u21922018, one dropped word); low 2/9 lines. Rule: viggle high default \u2192 whisper QC \u2192 failed lines retake on protoface. Gotchas: reference mode needs duration_s \u2265 5 (4 s = instant TASK_FAILED, retryable=true but deterministic); mode A accepts 4 s; ~16 parallel OK (episode in 12 min); Windows launch: set env via $env: not `set X=.. &&` (trailing space); refs must exist on the PC. Overnight-17 (15 Sep): 60+ clips, 0 in-clip cuts except 1 two-location action shot; EN lines 30/30 verbatim; 1080p same price; ar must be passed (16:9) per manifest item; PC background runners must be launched from Windows (device-VM procs die).",
+    "limits": "refs: at most 4 reference images (video+image combined cap 4), 1 ref video, no ref audio; duration 3\u201315 s (ref mode \u22655); 480p/768p/1080p same price",
+    "enabled": false,
+    "role": "v7.4 DISABLED by Nipam \u2014 Crun Seedance FAST is the only video lane. Re-enable only on his explicit word (emergency: Crun down). "
+   },
+   "_category_lanes": {
+    "ecommerce_ad_15s": "Flow product card (multi-view) + model chip + set card \u2192 3 keyframes (hero / in-use / pack) \u2192 viggle high 9:16 \u22655 s each \u2192 whisper QC \u2192 assemble with VO line. 15 s \u2248 $0.15. Product text must be on the card; never invent text in video.",
+    "brand_tvc_30s": "16:9! pass ar in the manifest. 6 \u00d7 5 s mode B, camera moves allowed (push-in/arc/crane) in one take; product card + set card + character. Hero shots \u2192 protoface 2K only if broadcast. \u2248 $0.30.",
+    "ugc_creator_20s": "1 creator chip + product card, 3 shots (hook 5 / demo 8 / CTA 7), product in hand in every keyframe. Lines \u2264 14 words. \u2248 $0.20.",
+    "action": "mode A 3-panel masters with coordinate layer (subject_box start\u2192end, event_box, speed_curve). Keep ONE location per clip; a two-location travel (cab \u2192 doorway) cuts at ~5 s \u2192 split into two shots.",
+    "two_speaker_shot": "both chips + both @Image refs, alternating lines \u2264 8 words, 8 s, mode B \u2014 works (8/8 lines).",
+    "emotion_night": "mode B with practical/neon light stated; identity holds; 6 s.",
+    "crowd": "state 'extras all different faces' in keyframe + H3 \u7fa4\u6f14\u7981\u6b62\u4e00\u6a21\u4e00\u6837; lead chip; works.",
+    "continuation_chain": "clip A last frame (-0.15 s) = clip B first_frame; chain \u2264 3 then fresh keyframe.",
+    "costume": "COSTUME LOCK: every keyframe prompt carries the exact wardrobe line (+ 'no <previous garment>'); for multi-shot scenes generate a WARDROBE CARD (front/back on white) and attach by tile title \u2014 t14 failed without it (4 dresses in 6 shots).",
+    "trailer_60s": "title beat (text in post) + montage 15 s (protoface ref-to-video: 3 chars + set + 12-panel storyboard @Image5, 54 cr) + dialogue beats (viggle) + end card + BGM (Suno instrumental) at -12 dB.",
+    "animation": "stylized 3D: character SHEET (3-view, white) \u2192 Flow create_character from the sheet \u2192 keyframes with chips + stylized set card; H3 \u3010\u753b\u9762\u98ce\u683c\u3011 = stylized 3D render, no photoreal.",
+    "music_video": "Suno song first (custom mode, lyrics) \u2192 5 \u00d7 6 s mode B, lyric line in the dialogue slot 'sings (\u2026, in tempo)' \u2192 cut A: song over; cut B: native singing for lip-sync.",
+    "dubbing": "regenerate the shot with the same refs + translated line + accent tag (EN/ES verified verbatim) \u2014 better than TTS overdub (lips match).",
+    "resolution": "viggle 1080p costs the same as 768p \u2192 default finals at 1080p; 2K protoface (13 cr/s) only for hero/broadcast; upscale lane optional.",
+    "voice": "H3 voice signature gives 'same actor' feel, not bit-identical; voice-clone (Higgsfield) costs credits \u2192 skipped; BGM via Suno instrumental 30 s cues."
+   },
+   "seedance_mini_crun": {
+    "enabled": false,
+    "vendor": "crun.ai",
+    "model": "bytedance/seedance2-0-mini-r2v (reference mode; i2v = bytedance/seedance2-0-mini-i2v only when starting from a keyframe)",
+    "endpoint": "POST https://api.crun.ai/api/v1/client/job/CreateTask {model, input:{prompt, reference_images[\u22649], reference_videos[\u22643], resolution 480p|720p, aspect_ratio, duration 4\u201315, audio}} \u00b7 GET /api/v1/client/job/TaskInfo?task_id= \u2192 data.status success \u2192 data.result.media_urls[0] (deleted after 14 days)",
+    "auth": "x-api-key CRUN_KEY (~/.config/keys_crun.env, cloud)",
+    "price": "206 cr = $1; 480p $0.0142/s (15 s = 43.82 cr = $0.21), 720p $0.0286/s",
+    "limits": "4\u201315 s; 480p/720p; refs public URLs; unlimited concurrency",
+    "identity": "pass portrait + character sheet as reference_images with [Image1]/[Image2] roles; one photo gives a generic face; sheet outfit overrides prompt outfit",
+    "role": "RETIRED 15 Sep 2026 \u2014 replaced by seedance_fast_atlas (FAST tier is sharper; Atlas $0.41 vs Crun FAST $0.64 / mini $0.21 per 15 s). Crun still works: fast model id bytedance/seedance2-0-fast-r2v (132.17 cr/15 s).",
+    "tested": "15 Sep 2026 cat + fight r2v = reAPI quality; replaces seedance_mini_reapi (15% dearer, 10-in-flight cap)"
+   },
+   "seedance_mini_reapi": {
+    "enabled": false,
+    "vendor": "reapi.ai",
+    "model": "seedance-2.0-mini",
+    "endpoint": "POST https://reapi.ai/api/v1/videos/generations \u00b7 GET /api/v1/tasks/{id}",
+    "auth": "Bearer REAPI_KEY (~/.config/keys_reapi.env, cloud)",
+    "price": "480p $0.017/s \u00b7 720p $0.036/s \u00b7 ref-video tier $0.011/s (not observed); $1 = 1000 cr",
+    "limits": "4\u201315 s; 480p/720p only; refs \u22649 XOR first/last frame; ref videos \u22643; public URLs only; 10 tasks in flight",
+    "role": "RETIRED 15 Sep 2026 \u2014 replaced by seedance_mini_crun (same model, 15% cheaper, unlimited concurrency). Keep key for fallback only.",
+    "tested": "15 Sep 2026: EP4 15 shots, race 12 s, ritual 2\u00d715",
+    "identity": "pass portrait + character sheet as reference_image_urls (2 refs); one photo gives a generic face; sheet outfit overrides prompt outfit"
+   },
+   "seedance_fast_atlas": {
+    "enabled": false,
+    "vendor": "atlascloud.ai",
+    "model": "bytedance/seedance-2.0-fast/reference-to-video (r2v; also .../image-to-video, .../text-to-video)",
+    "endpoint": "POST https://api.atlascloud.ai/api/v1/model/generateVideo {model, prompt, reference_images[<=9], reference_videos[<=3], reference_audios[<=3], duration 4-15|-1, resolution 480p|720p|720p-SR|1080p-SR, ratio, generate_audio} -> data.id \u00b7 GET /api/v1/model/prediction/{id} -> data.status completed -> data.outputs[0] (volces signed URL, 24 h); data.completion_tokens = billed tokens (= dur*w*h*24/1024)",
+    "auth": "Bearer ATLAS_KEY (~/.config/keys_atlas.env, cloud)",
+    "price": "$0.027/s (15 s 480p = $0.41; 151,078 tokens billed); standard 2.0 = $0.09/s; 2.5 r2v = $0.134/s (30 s native, no fast variant)",
+    "limits": "4-15 s; 480p/720p native; refs public URLs; ~170 s per 15 s clip; no balance endpoint (check dashboard)",
+    "identity": "portrait/photo + character sheet as 2 refs (@Image1 face, @Image2 sheet); sheet outfit locks",
+    "role": "v7.4 DISABLED by Nipam \u2014 Crun Seedance FAST is the only video lane. Re-enable only on his explicit word (emergency: Crun down). Seedance BACKUP lane #2 (same model as Crun FAST, $0.41/15 s, ~170 s) \u2014 use when Crun is down or for bulk drafts. Never costume-critical drama, never chains.",
+    "runner": "projects/bench-intimate/docs/prov.py atlas submit|poll",
+    "tested": "15 Sep 2026 bench-intimate int-01: same 3-shot prompt as viggle/Crun; identity 8/10, 4/4 EN lines, 3 shots on cue, ending beat exact; = Crun FAST quality at 64% of the price and 2x faster"
+   },
+   "seedance_fast_crun": {
+    "enabled": true,
+    "vendor": "crun.ai",
+    "model": "bytedance/seedance2-0-fast-r2v (reference mode; never -i2v for identity)",
+    "endpoint": "POST https://api.crun.ai/api/v1/client/job/CreateTask {model, input:{prompt, reference_images[<=9], reference_videos[<=3], resolution 480p|720p, aspect_ratio, duration 4-15, audio}} -> data.task_id \u00b7 GET /api/v1/client/job/TaskInfo?task_id= -> data.status success -> data.result.media_urls[0], data.credits (media deleted after 14 days)",
+    "auth": "x-api-key CRUN_KEY (~/.config/keys_crun.env, cloud)",
+    "price": "206 cr = $1; 480p 15 s = 132.17 cr = $0.64 ($0.043/s); ~5 min per clip; unlimited concurrency",
+    "identity": "portrait/photo + character sheet as 2 refs (@Image1 face, @Image2 sheet); sheet outfit locks",
+    "role": "DEFAULT and ONLY production video lane (Nipam, 15 Sep 2026 v7.4: 'sab video ke liye Crun Seedance 2.0 FAST \u2014 mehnga hai par quality hai'). Every drama / ad / montage shot, Mode A (i2v start frame) / B / C. Runner tools/run_crun.py. Output 480p (720p on request) \u2192 upscale in post.",
+    "runner": "tools/run_crun.py <proj> <manifest> [ids] (PC or cloud; refs auto-hosted on litterbox)",
+    "tested": "15 Sep 2026 bench-intimate int-01: identity 8/10, 4/4 EN lines, 3 shots on cue, ending beat exact"
+   }
+  },
+  "image": {
+   "default": "higgsfield_unlimited_mcp",
+   "higgsfield_web": {
+    "vendor": "higgsfield_web_via_chrome",
+    "url": "https://higgsfield.ai/ai/image?model=seedream_v5_lite",
+    "models_unlimited_web": [
+     "seedream_v5_lite",
+     "nano_banana",
+     "nano_banana_pro",
+     "gpt_image_2",
+     "flux_2",
+     "seedream_v4_5",
+     "kling_omni_image"
+    ],
+    "cost_lane": "unlimited",
+    "notes": "MCP use_unlim is refused for these; the web toggle works. Extension must be connected (user opens Claude side panel once). Draft persists across reload. Download \u2192 ~/Downloads \u2192 stage.",
+    "enabled": false,
+    "role": "v7.5 DISABLED by Nipam \u2014 Atlas GPT Image 2 is the only image lane. "
+   },
+   "higgsfield_mcp": {
+    "vendor": "higgsfield_mcp",
+    "models": {
+     "nano_banana_pro": 2,
+     "gpt_image_2": 2,
+     "seedream_v5_lite": 2
+    },
+    "unit": "credits/image",
+    "cost_lane": "credits",
+    "enabled": false,
+    "role": "v7.5 DISABLED by Nipam \u2014 Atlas GPT Image 2 is the only image lane. "
+   },
+   "fal_nano_banana_pro": {
+    "vendor": "fal",
+    "endpoint": "fal-ai/nano-banana-pro",
+    "price_usd": 0.1,
+    "cost_lane": "forbidden",
+    "status": "FORBIDDEN",
+    "enabled": false,
+    "role": "v7.5 DISABLED by Nipam \u2014 Atlas GPT Image 2 is the only image lane. "
+   },
+   "pollo_nano_banana_2": {
+    "vendor": "pollo",
+    "price_usd_2k": 0.1,
+    "cost_lane": "forbidden",
+    "status": "FORBIDDEN",
+    "enabled": false,
+    "role": "v7.5 DISABLED by Nipam \u2014 Atlas GPT Image 2 is the only image lane. "
+   },
+   "comfyui_zimage": {
+    "vendor": "local_pc",
+    "status": "user_runs",
+    "use": "character ID packs",
+    "cost_lane": "unlimited",
+    "enabled": false,
+    "role": "v7.5 DISABLED by Nipam \u2014 Atlas GPT Image 2 is the only image lane. "
+   },
+   "higgsfield_unlimited_mcp": {
+    "vendor": "higgsfield-unlimited MCP (Nipam's own, on PC)",
+    "tools": [
+     "unlimited_status",
+     "generate_image_batch(model=seedream_v5_lite|nano_banana|flux_2, wait=true)",
+     "wait_for_job(timeout<=50 per call \u2014 device tool has a 60 s cap)"
+    ],
+    "models_unlimited_active": [
+     "nano-banana-2 = Nano Banana Pro (7-day pack to 19 Sep 2026; DEFAULT for keyframes/edits; concurrent_jobs_limit=1 \u2192 submit sequentially, ~1-2 min each)",
+     "flux_2 (365)",
+     "seedream_v5_lite",
+     "seedream_v4_5 (renders 'safari suit' with epaulettes \u2014 avoid for Kishore)",
+     "nano_banana",
+     "kling_omni_image",
+     "text2image_gpt"
+    ],
+    "output": "4096x2304 for 16:9; cloudfront URL \u2192 curl into assets/",
+    "cost_lane": "unlimited",
+    "notes": "Replaces the Chrome-driven web lane; keep higgsfield_web as fallback when the MCP is down.",
+    "auto_order": "NB Pro (while pack active) \u2192 FLUX.2 \u2192 Seedream 5 Lite \u2192 4.5 \u2192 Nano Banana \u2192 Kling O1 \u2192 GPT Image; always re-check unlimited_status \u2014 he buys 7-day packs",
+    "default_model": "nano-banana-2",
+    "upload_fix": "service.py resolve_inputs: concurrent + cached uploads (12 Sep 2026); input_files with 4 refs submits in seconds",
+    "enabled": false,
+    "role": "v7.5 DISABLED by Nipam \u2014 Atlas GPT Image 2 is the only image lane. "
+   },
+   "topview_image": {
+    "vendor": "topview-unlimited MCP",
+    "models": {
+     "nano_banana2": "Nano Banana Pro 2K \u2014 365-day unlimited (default)",
+     "nano_banana_2": "Nano Banana 2 2K \u2014 365-day unlimited",
+     "seedream-5.0": "2K",
+     "gpt-image-2.5-flare": "1K text"
+    },
+    "cost_lane": "unlimited",
+    "queue": "~1 min",
+    "note": "blocked whenever his own video tasks fill the unlimited concurrent slots (5106) \u2014 check list_tasks first",
+    "enabled": false,
+    "role": "v7.5 DISABLED by Nipam \u2014 Atlas GPT Image 2 is the only image lane. "
+   },
+   "_rule": "Image law v7.5 (Nipam, 15 Sep 2026): EVERY image \u2192 atlas_gpt_image2 (Atlas Cloud GPT Image 2, t2i $0.004 / edit $0.005). Flow / Higgsfield / TopView unlimited MCPs DISABLED unless Nipam says so. Identity = edit model with the real photo or the master portrait as `images` ref; character sheet via edit from the portrait. QC gate unchanged.",
+   "flow_unlimited_mcp": {
+    "vendor": "flow-unlimited MCP (Google Flow Pro, Nipam's own, on PC; project 28c6ed48-c4fc-49d3-b0b6-a5177992afaa)",
+    "models": {
+     "Nano Banana Pro": "default \u2014 1K gen \u2192 2K upscaled download free; best faces + reference lock; x1\u2013x4 per call",
+     "Nano Banana 2": "2K faster",
+     "Nano Banana 2 Lite": "2K drafts"
+    },
+    "aspects": [
+     "16:9",
+     "4:3",
+     "1:1",
+     "3:4",
+     "9:16"
+    ],
+    "count": "1\u20134 per call (5+ \u2192 split batches)",
+    "refs": "reference_images=[local paths] (1\u20133: character + product + background) or reference_assets (project asset names); previous output \u2192 list_recent \u2192 local path",
+    "speed": "x1 \u2248 45 s, x4 \u2248 1 min + ~15 s per 2K download",
+    "cost_lane": "unlimited",
+    "never": "Flow VIDEO (Veo/Omni cost credits \u2014 tool refuses)",
+    "tools": [
+     "auth_status",
+     "unlimited_status",
+     "credits",
+     "generate_image",
+     "check_job",
+     "download_job",
+     "download_media",
+     "list_recent",
+     "upload_reference"
+    ],
+    "output_dir": "C:\\Users\\admin\\flow-unlimited-mcp\\flow_output\\",
+    "enabled": false,
+    "role": "v7.5 DISABLED by Nipam \u2014 Atlas GPT Image 2 is the only image lane. "
+   },
+   "_bible": "Character anchors: knowledge/templates/character-bible-prompt.md \u2192 one NB Pro 2K 16:9 bible per character on an unlimited MCP, QC gate, then 3 cropped refs for video lanes.",
+   "atlas_gpt_image2": {
+    "enabled": true,
+    "vendor": "atlascloud.ai",
+    "model": "openai/gpt-image-2/text-to-image ($0.004) \u00b7 openai/gpt-image-2/edit ($0.005, `images`[] refs)",
+    "endpoint": "POST https://api.atlascloud.ai/api/v1/model/generateImage {model, prompt, size 1024x1024|1024x1536|1536x1024|2048x2048, n, images[] (edit)} -> data.id \u00b7 GET /api/v1/model/prediction/{id} -> status completed -> outputs[0] (aliyun signed URL)",
+    "auth": "Bearer ATLAS_KEY (~/.config/keys_atlas.env; PC .config/keys_atlas.env)",
+    "runner": "tools/run_atlas_img.py <proj> <jobs.json> [ids] \u2192 refs/<id>.png",
+    "role": "v7.5 DEFAULT and ONLY image lane (Nipam, 15 Sep): casting/look portraits from a real photo (edit), character sheets, location/prop/wardrobe cards, scene masters, keyframes, posters. Refs must be public URLs (litterbox auto). ~60 s per job, parallel, cloud or PC.",
+    "tested": "15 Sep bench-img: look portrait from real photo = identity held + new outfit; sheet\u2192new outfit held; garage 4-panel, car 3-view with text '369', wardrobe flat-lay \u2014 5/5 PASS, $0.022 total"
+   }
+  },
+  "music": {
+   "default": "suno",
+   "suno": {
+    "vendor": "sunoapi.org",
+    "model": "V6",
+    "duration_s": [
+     10,
+     360
+    ],
+    "notes": "instrumental + duration in custom mode; two takes per task; poll record-info; use curl (python urllib gets 403)",
+    "cost_lane": "subscription_credits"
+   },
+   "artlist": {
+    "vendor": "artlist_mcp",
+    "tool": "generate_music",
+    "cost_lane": "unlimited_if_plan"
+   }
+  },
+  "speech": {
+   "default": "fal_speech",
+   "fal_speech": {
+    "vendor": "fal",
+    "endpoint": "fal-ai/minimax/speech-2.8-hd",
+    "cost_lane": "paid_api_cheap"
+   },
+   "higgsfield_tts": {
+    "vendor": "higgsfield_mcp",
+    "model": "text2speech_v2",
+    "variants": [
+     "elevenlabs",
+     "minimax",
+     "seed_speech"
+    ],
+    "cost_lane": "unlimited_if_audio_bundle_active"
+   },
+   "seed_audio": {
+    "vendor": "higgsfield_mcp",
+    "model": "seed_audio",
+    "use": "cinematic dub, clone (consent), soundscape+dialogue"
+   }
+  },
+  "upscale": {
+   "default": "fal_h3_2k_inline",
+   "higgsfield_upscale_video": {
+    "vendor": "higgsfield_mcp",
+    "tool": "upscale_video"
+   },
+   "minimax_regenerate_2k": {
+    "vendor": "minimax_api",
+    "endpoint": "POST https://api.minimax.io/v2/video_regeneration",
+    "requires": "genuine H3 768P output + final prompt",
+    "cost_lane": "paid_api"
+   }
+  },
+  "post": {
+   "default": "ffmpeg",
+   "tool": "tools/post.py",
+   "capcut_export": "minimax skill clip-export (pyJianYingDraft on Windows)"
+  }
+ },
+ "cost_lane_order": [
+  "unlimited",
+  "unlimited_if_active_else_credits",
+  "subscription",
+  "subscription_credits",
+  "paid_api_cheap (VIDEO ONLY)",
+  "credits",
+  "paid_api (VIDEO ONLY)"
+ ],
+ "approval_rules": {
+  "paid_api_cheap": "allowed per stage once the stage's generation gate is confirmed (cost basis shown)",
+  "credits": "ask per stage",
+  "paid_api": "ask per clip"
+ },
+ "_delivery_note": "device_commit_files re-muxes any file that starts with an MP4 header and caps at 20 MB \u2014 send whole MP4s only; for >20 MB, zip -0 then split the ZIP into 19 MB parts and cat on the PC (verified by md5).",
+ "qc_gate": "After every image stage (anchors, keyframes) dispatch .claude/agents/qc.md: verify each image against script/storyboard/character sheets/scene grids (face, bindi/sindoor, earrings, clothing colour, props, set, blocking, standing/seated). Regenerate failing ids (\u20b90) until all-PASS. Only then Visual Gen.",
+ "_version": 7.6,
+ "_locked": "15 Sep 2026 \u2014 rule set v7.1 final; change only via knowledge/CHANGELOG.md entry",
+ "_notes": {}
+}

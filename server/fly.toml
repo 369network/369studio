@@ -1,0 +1,24 @@
+# 369 Studio — Fly.io deploy.  fly launch --no-deploy  (once)  then  fly deploy
+app = "369studio"
+primary_region = "sin"   # Singapore (near ap-south)
+
+[build]
+  dockerfile = "server/Dockerfile"
+
+[env]
+  SUPABASE_URL = "https://jjyguuctlqgvlbzifpuv.supabase.co"
+  PUBLIC_URL = "https://369studio.fly.dev"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+
+# secrets (set once, NOT in this file):
+#   fly secrets set SUPABASE_ANON=... SUPABASE_SERVICE_KEY=... STRIPE_SECRET_KEY=... STRIPE_WEBHOOK_SECRET=... \
+#     CRUN_KEY=... ATLAS_KEY=... SUNOAPI_KEY=... R2_ENDPOINT=... R2_BUCKET=... R2_ACCESS_KEY=... R2_SECRET_KEY=... R2_PUBLIC_BASE=...
+[[mounts]]
+  source = "studio_jobs"
+  destination = "/app/server/jobs"

@@ -1,0 +1,24 @@
+services:
+  studio:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    ports: ["8080:8080"]
+    volumes:
+      - ~/.config:/root/.config:ro        # keys_crun.env, keys_atlas.env
+      - ./jobs:/app/server/jobs           # persist renders + job db
+    environment:
+      - SUPABASE_URL=https://jjyguuctlqgvlbzifpuv.supabase.co
+      - SUPABASE_ANON=${SUPABASE_ANON}
+      # billing (optional):
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY:-}
+      - PUBLIC_URL=${PUBLIC_URL:-http://localhost:8080}
+      # storage (optional):
+      - R2_ENDPOINT=${R2_ENDPOINT:-}
+      - R2_BUCKET=${R2_BUCKET:-}
+      - R2_ACCESS_KEY=${R2_ACCESS_KEY:-}
+      - R2_SECRET_KEY=${R2_SECRET_KEY:-}
+      - R2_PUBLIC_BASE=${R2_PUBLIC_BASE:-}
+    restart: unless-stopped
