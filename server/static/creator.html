@@ -106,8 +106,8 @@ function setSt(key,val){ st[key]=val; document.querySelectorAll('.sel .menu').fo
 async function loadChars(){ try{ CHARS=await Shell.api('/api/characters'); }catch(e){CHARS=[];}
   $('#idpick').innerHTML='<span class="sub" style="font-size:12px">Identity:</span>'
     +'<span class="c '+(st.ref?'':'on')+'" onclick="setRef(null)">None</span>'
-    +CHARS.map(c=>{var r=(c.meta&&c.meta.ref||'').replace(/\\/g,"/"); return '<span class="c '+(st.ref===r?'on':'')+'" onclick="setRef(\''+r+'\')">'+(c.name||'Char')+'</span>';}).join('')
-    +(CHARS.length?'':'<span class="sub" style="font-size:12px">— make one in AI Influencer</span>'); }
+    +CHARS.map(c=>{var r=(c.meta&&c.meta.ref||'').replace(/\\/g,"/");var img=c.meta&&c.meta.img; return '<span class="c '+(st.ref===r?'on':'')+'" onclick="setRef(\''+r+'\')">'+(img?'<img src="'+img+'" style="width:22px;height:22px;border-radius:50%;object-fit:cover">':'')+(c.name||'Char')+'</span>';}).join('')
+    +'<a class="c" href="/library" style="border-style:dashed">+ Library</a>'; }
 function setRef(r){ st.ref=r||null; loadChars(); }
 
 async function refreshCost(){ try{ var m=(st.mode==='r2v')?'video':st.mode;

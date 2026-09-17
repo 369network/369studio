@@ -13,3 +13,7 @@ projects/*/final/
 __pycache__/
 *.pyc
 *.zip
+
+# built-in character library (keep)
+!server/static/library/
+!server/static/library/**

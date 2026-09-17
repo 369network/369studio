@@ -1,0 +1,602 @@
+[
+{
+"id": "asmr-sergeant-marcus",
+"name": "Asmr Sergeant Marcus",
+"category": "human",
+"img": "library/asmr-sergeant-marcus.jpg",
+"voice": "library/asmr-sergeant-marcus.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Asmr Sergeant Marcus/017-asmr-sergeant-marcus.wav"
+},
+{
+"id": "austin-cowgirl-jolene",
+"name": "Austin Cowgirl Jolene",
+"category": "human",
+"img": "library/austin-cowgirl-jolene.jpg",
+"voice": "library/austin-cowgirl-jolene.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Austin Cowgirl Jolene/030-austin-cowgirl-jolene.wav"
+},
+{
+"id": "berlin-dj-lukas",
+"name": "Berlin Dj Lukas",
+"category": "human",
+"img": "library/berlin-dj-lukas.jpg",
+"voice": "library/berlin-dj-lukas.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Berlin Dj Lukas/023-berlin-dj-lukas.wav"
+},
+{
+"id": "boomer-grandma-betty",
+"name": "Boomer Grandma Betty",
+"category": "human",
+"img": "library/boomer-grandma-betty.jpg",
+"voice": "library/boomer-grandma-betty.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Boomer Grandma Betty/012-boomer-grandma-betty.wav"
+},
+{
+"id": "brainrot-jayden",
+"name": "Brainrot Jayden",
+"category": "human",
+"img": "library/brainrot-jayden.jpg",
+"voice": "library/brainrot-jayden.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Brainrot Jayden/006-brainrot-jayden.wav"
+},
+{
+"id": "clean-girl-aria",
+"name": "Clean Girl Aria",
+"category": "human",
+"img": "library/clean-girl-aria.jpg",
+"voice": "library/clean-girl-aria.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Clean Girl Aria/001-clean-girl-aria.wav"
+},
+{
+"id": "cool-grandpa-hiroshi",
+"name": "Cool Grandpa Hiroshi",
+"category": "human",
+"img": "library/cool-grandpa-hiroshi.jpg",
+"voice": "library/cool-grandpa-hiroshi.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Cool Grandpa Hiroshi/013-cool-grandpa-hiroshi.wav"
+},
+{
+"id": "coquette-destiny",
+"name": "Coquette Destiny",
+"category": "human",
+"img": "library/coquette-destiny.jpg",
+"voice": "library/coquette-destiny.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Coquette Destiny/003-coquette-destiny.wav"
+},
+{
+"id": "cottagecore-lily",
+"name": "Cottagecore Lily",
+"category": "human",
+"img": "library/cottagecore-lily.jpg",
+"voice": "library/cottagecore-lily.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Cottagecore Lily/010-cottagecore-lily.wav"
+},
+{
+"id": "dubai-rich-kid-khalid",
+"name": "Dubai Rich Kid Khalid",
+"category": "human",
+"img": "library/dubai-rich-kid-khalid.jpg",
+"voice": "library/dubai-rich-kid-khalid.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Dubai Rich Kid Khalid/028-dubai-rich-kid-khalid.wav"
+},
+{
+"id": "emo-revival-sage",
+"name": "Emo Revival Sage",
+"category": "human",
+"img": "library/emo-revival-sage.jpg",
+"voice": "library/emo-revival-sage.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Emo Revival Sage/008-emo-revival-sage.wav"
+},
+{
+"id": "gen-z-professor-miles",
+"name": "Gen Z Professor Miles",
+"category": "human",
+"img": "library/gen-z-professor-miles.jpg",
+"voice": "library/gen-z-professor-miles.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Gen Z Professor Miles/016-gen-z-professor-miles.wav"
+},
+{
+"id": "gen-z-surgeon-nia",
+"name": "Gen Z Surgeon Nia",
+"category": "human",
+"img": "library/gen-z-surgeon-nia.jpg",
+"voice": "library/gen-z-surgeon-nia.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Gen Z Surgeon Nia/011-gen-z-surgeon-nia.wav"
+},
+{
+"id": "girlboss-priya",
+"name": "Girlboss Priya",
+"category": "human",
+"img": "library/girlboss-priya.jpg",
+"voice": "library/girlboss-priya.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Girlboss Priya/015-girlboss-priya.wav"
+},
+{
+"id": "glam-grandma-loretta",
+"name": "Glam Grandma Loretta",
+"category": "human",
+"img": "library/glam-grandma-loretta.jpg",
+"voice": "library/glam-grandma-loretta.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Glam Grandma Loretta/020-glam-grandma-loretta.wav"
+},
+{
+"id": "harajuku-yuki",
+"name": "Harajuku Yuki",
+"category": "human",
+"img": "library/harajuku-yuki.jpg",
+"voice": "library/harajuku-yuki.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Harajuku Yuki/022-harajuku-yuki.wav"
+},
+{
+"id": "lagos-techbro-emeka",
+"name": "Lagos Techbro Emeka",
+"category": "human",
+"img": "library/lagos-techbro-emeka.jpg",
+"voice": "library/lagos-techbro-emeka.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Lagos Techbro Emeka/021-lagos-techbro-emeka.wav"
+},
+{
+"id": "london-roadman-callum",
+"name": "London Roadman Callum",
+"category": "human",
+"img": "library/london-roadman-callum.jpg",
+"voice": "library/london-roadman-callum.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/London Roadman Callum/026-london-roadman-callum.wav"
+},
+{
+"id": "mob-wife-valentina",
+"name": "Mob Wife Valentina",
+"category": "human",
+"img": "library/mob-wife-valentina.jpg",
+"voice": "library/mob-wife-valentina.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Mob Wife Valentina/004-mob-wife-valentina.wav"
+},
+{
+"id": "mumbai-creator-ananya",
+"name": "Mumbai Creator Ananya",
+"category": "human",
+"img": "library/mumbai-creator-ananya.jpg",
+"voice": "library/mumbai-creator-ananya.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Mumbai Creator Ananya/024-mumbai-creator-ananya.wav"
+},
+{
+"id": "old-money-arjun",
+"name": "Old Money Arjun",
+"category": "human",
+"img": "library/old-money-arjun.jpg",
+"voice": "library/old-money-arjun.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Old Money Arjun/005-old-money-arjun.wav"
+},
+{
+"id": "paris-art-student-camille",
+"name": "Paris Art Student Camille",
+"category": "human",
+"img": "library/paris-art-student-camille.jpg",
+"voice": "library/paris-art-student-camille.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Paris Art Student Camille/029-paris-art-student-camille.wav"
+},
+{
+"id": "s-o-paulo-mc-rafa",
+"name": "S O Paulo Mc Rafa",
+"category": "human",
+"img": "library/s-o-paulo-mc-rafa.jpg",
+"voice": "library/s-o-paulo-mc-rafa.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/S O Paulo Mc Rafa/025-s-o-paulo-mc-rafa.wav"
+},
+{
+"id": "seoul-trainee-soojin",
+"name": "Seoul Trainee Soojin",
+"category": "human",
+"img": "library/seoul-trainee-soojin.jpg",
+"voice": "library/seoul-trainee-soojin.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Seoul Trainee Soojin/027-seoul-trainee-soojin.wav"
+},
+{
+"id": "sigma-kyle",
+"name": "Sigma Kyle",
+"category": "human",
+"img": "library/sigma-kyle.jpg",
+"voice": "library/sigma-kyle.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Sigma Kyle/002-sigma-kyle.wav"
+},
+{
+"id": "skater-accountant-kevin",
+"name": "Skater Accountant Kevin",
+"category": "human",
+"img": "library/skater-accountant-kevin.jpg",
+"voice": "library/skater-accountant-kevin.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Skater Accountant Kevin/019-skater-accountant-kevin.wav"
+},
+{
+"id": "streetwear-king-darius",
+"name": "Streetwear King Darius",
+"category": "human",
+"img": "library/streetwear-king-darius.jpg",
+"voice": "library/streetwear-king-darius.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Streetwear King Darius/009-streetwear-king-darius.wav"
+},
+{
+"id": "tattooed-librarian-rosa",
+"name": "Tattooed Librarian Rosa",
+"category": "human",
+"img": "library/tattooed-librarian-rosa.jpg",
+"voice": "library/tattooed-librarian-rosa.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Tattooed Librarian Rosa/018-tattooed-librarian-rosa.wav"
+},
+{
+"id": "that-girl-mei",
+"name": "That Girl Mei",
+"category": "human",
+"img": "library/that-girl-mei.jpg",
+"voice": "library/that-girl-mei.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/That Girl Mei/007-that-girl-mei.wav"
+},
+{
+"id": "yoga-dad-greg",
+"name": "Yoga Dad Greg",
+"category": "human",
+"img": "library/yoga-dad-greg.jpg",
+"voice": "library/yoga-dad-greg.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Human Archetypes/Yoga Dad Greg/014-yoga-dad-greg.wav"
+},
+{
+"id": "anchor-parrot",
+"name": "Anchor Parrot",
+"category": "animal",
+"img": "library/anchor-parrot.jpg",
+"voice": "library/anchor-parrot.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Animal Character/Anchor Parrot/068-anchor-parrot.wav"
+},
+{
+"id": "barista-calico",
+"name": "Barista Calico",
+"category": "animal",
+"img": "library/barista-calico.jpg",
+"voice": "library/barista-calico.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Animal Character/Barista Calico/061-barista-calico.wav"
+},
+{
+"id": "boss-corgi",
+"name": "Boss Corgi",
+"category": "animal",
+"img": "library/boss-corgi.jpg",
+"voice": "library/boss-corgi.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Animal Character/Boss Corgi/062-boss-corgi.wav"
+},
+{
+"id": "boxer-bunny",
+"name": "Boxer Bunny",
+"category": "animal",
+"img": "library/boxer-bunny.jpg",
+"voice": "library/boxer-bunny.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Animal Character/Boxer Bunny/073-boxer-bunny.wav"
+},
+{
+"id": "ceo-orange-tabby",
+"name": "Ceo Orange Tabby",
+"category": "animal",
+"img": "library/ceo-orange-tabby.jpg",
+"voice": "library/ceo-orange-tabby.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Animal Character/Ceo Orange Tabby/056-ceo-orange-tabby.wav"
+},
+{
+"id": "chaos-husky",
+"name": "Chaos Husky",
+"category": "animal",
+"img": "library/chaos-husky.jpg",
+"voice": "library/chaos-husky.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Animal Character/Chaos Husky/066-chaos-husky.wav"
+},
+{
+"id": "chef-frog",
+"name": "Chef Frog",
+"category": "animal",
+"img": "library/chef-frog.jpg",
+"voice": "library/chef-frog.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Animal Character/Chef Frog/072-chef-frog.wav"
+},
+{
+"id": "coach-shiba",
+"name": "Coach Shiba",
+"category": "animal",
+"img": "library/coach-shiba.jpg",
+"voice": "library/coach-shiba.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Animal Character/Coach Shiba/063-coach-shiba.wav"
+},
+{
+"id": "coder-red-panda",
+"name": "Coder Red Panda",
+"category": "animal",
+"img": "library/coder-red-panda.jpg",
+"voice": "library/coder-red-panda.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Animal Character/Coder Red Panda/075-coder-red-panda.wav"
+},
+{
+"id": "himbo-golden",
+"name": "Himbo Golden",
+"category": "animal",
+"img": "library/himbo-golden.jpg",
+"voice": "library/himbo-golden.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Animal Character/Himbo Golden/064-himbo-golden.wav"
+},
+{
+"id": "judge-owl",
+"name": "Judge Owl",
+"category": "animal",
+"img": "library/judge-owl.jpg",
+"voice": "library/judge-owl.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Animal Character/Judge Owl/071-judge-owl.wav"
+},
+{
+"id": "lawyer-shark",
+"name": "Lawyer Shark",
+"category": "animal",
+"img": "library/lawyer-shark.jpg",
+"voice": "library/lawyer-shark.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Animal Character/Lawyer Shark/074-lawyer-shark.wav"
+},
+{
+"id": "lazy-garfield",
+"name": "Lazy Garfield",
+"category": "animal",
+"img": "library/lazy-garfield.jpg",
+"voice": "library/lazy-garfield.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Animal Character/Lazy Garfield/060-lazy-garfield.wav"
+},
+{
+"id": "madame-poodle",
+"name": "Madame Poodle",
+"category": "animal",
+"img": "library/madame-poodle.jpg",
+"voice": null,
+"_wav": null
+},
+{
+"id": "princess-ragdoll",
+"name": "Princess Ragdoll",
+"category": "animal",
+"img": "library/princess-ragdoll.jpg",
+"voice": "library/princess-ragdoll.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Animal Character/Princess Ragdoll/058-princess-ragdoll.wav"
+},
+{
+"id": "professor-penguin",
+"name": "Professor Penguin",
+"category": "animal",
+"img": "library/professor-penguin.jpg",
+"voice": "library/professor-penguin.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Animal Character/Professor Penguin/069-professor-penguin.wav"
+},
+{
+"id": "raccoon-bandit",
+"name": "Raccoon Bandit",
+"category": "animal",
+"img": "library/raccoon-bandit.jpg",
+"voice": "library/raccoon-bandit.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Animal Character/Raccoon Bandit/067-raccoon-bandit.wav"
+},
+{
+"id": "spy-siamese",
+"name": "Spy Siamese",
+"category": "animal",
+"img": "library/spy-siamese.jpg",
+"voice": "library/spy-siamese.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Animal Character/Spy Siamese/059-spy-siamese.wav"
+},
+{
+"id": "trader-hamster",
+"name": "Trader Hamster",
+"category": "animal",
+"img": "library/trader-hamster.jpg",
+"voice": "library/trader-hamster.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Animal Character/Trader Hamster/070-trader-hamster.wav"
+},
+{
+"id": "witch-black-cat",
+"name": "Witch Black Cat",
+"category": "animal",
+"img": "library/witch-black-cat.jpg",
+"voice": "library/witch-black-cat.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Animal Character/Witch Black Cat/057-witch-black-cat.wav"
+},
+{
+"id": "50s-greaser",
+"name": "50s Greaser",
+"category": "fantasy",
+"img": "library/50s-greaser.jpg",
+"voice": "library/50s-greaser.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/50s Greaser/098-50s-greaser.wav"
+},
+{
+"id": "80s-aerobics-coach",
+"name": "80s Aerobics Coach",
+"category": "fantasy",
+"img": "library/80s-aerobics-coach.jpg",
+"voice": "library/80s-aerobics-coach.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/80s Aerobics Coach/094-80s-aerobics-coach.wav"
+},
+{
+"id": "android",
+"name": "Android",
+"category": "fantasy",
+"img": "library/android.jpg",
+"voice": "library/android.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/Android/084-android.wav"
+},
+{
+"id": "angel-influencer",
+"name": "Angel Influencer",
+"category": "fantasy",
+"img": "library/angel-influencer.jpg",
+"voice": "library/angel-influencer.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/Angel Influencer/089-angel-influencer.wav"
+},
+{
+"id": "classic-goth-girl",
+"name": "Classic Goth Girl",
+"category": "fantasy",
+"img": "library/classic-goth-girl.jpg",
+"voice": "library/classic-goth-girl.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/Classic Goth Girl/076-classic-goth-girl.wav"
+},
+{
+"id": "cyber-goth",
+"name": "Cyber Goth",
+"category": "fantasy",
+"img": "library/cyber-goth.jpg",
+"voice": "library/cyber-goth.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/Cyber Goth/077-cyber-goth.wav"
+},
+{
+"id": "cyberpunk-runner",
+"name": "Cyberpunk Runner",
+"category": "fantasy",
+"img": "library/cyberpunk-runner.jpg",
+"voice": "library/cyberpunk-runner.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/Cyberpunk Runner/083-cyberpunk-runner.wav"
+},
+{
+"id": "dark-academia-boy",
+"name": "Dark Academia Boy",
+"category": "fantasy",
+"img": "library/dark-academia-boy.jpg",
+"voice": "library/dark-academia-boy.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/Dark Academia Boy/079-dark-academia-boy.wav"
+},
+{
+"id": "day-of-the-dead",
+"name": "Day Of The Dead",
+"category": "fantasy",
+"img": "library/day-of-the-dead.jpg",
+"voice": "library/day-of-the-dead.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/Day Of The Dead/082-day-of-the-dead.wav"
+},
+{
+"id": "demon-ceo",
+"name": "Demon Ceo",
+"category": "fantasy",
+"img": "library/demon-ceo.jpg",
+"voice": "library/demon-ceo.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/Demon Ceo/088-demon-ceo.wav"
+},
+{
+"id": "disco-king",
+"name": "Disco King",
+"category": "fantasy",
+"img": "library/disco-king.jpg",
+"voice": "library/disco-king.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/Disco King/095-disco-king.wav"
+},
+{
+"id": "elf-archer",
+"name": "Elf Archer",
+"category": "fantasy",
+"img": "library/elf-archer.jpg",
+"voice": "library/elf-archer.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/Elf Archer/087-elf-archer.wav"
+},
+{
+"id": "gladiator",
+"name": "Gladiator",
+"category": "fantasy",
+"img": "library/gladiator.jpg",
+"voice": "library/gladiator.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/Gladiator/092-gladiator.wav"
+},
+{
+"id": "medieval-knight",
+"name": "Medieval Knight",
+"category": "fantasy",
+"img": "library/medieval-knight.jpg",
+"voice": "library/medieval-knight.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/Medieval Knight/093-medieval-knight.wav"
+},
+{
+"id": "mermaid",
+"name": "Mermaid",
+"category": "fantasy",
+"img": "library/mermaid.jpg",
+"voice": "library/mermaid.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/Mermaid/090-mermaid.wav"
+},
+{
+"id": "pharaoh",
+"name": "Pharaoh",
+"category": "fantasy",
+"img": "library/pharaoh.jpg",
+"voice": "library/pharaoh.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/Pharaoh/091-pharaoh.wav"
+},
+{
+"id": "pirate-captain",
+"name": "Pirate Captain",
+"category": "fantasy",
+"img": "library/pirate-captain.jpg",
+"voice": "library/pirate-captain.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/Pirate Captain/096-pirate-captain.wav"
+},
+{
+"id": "samurai",
+"name": "Samurai",
+"category": "fantasy",
+"img": "library/samurai.jpg",
+"voice": "library/samurai.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/Samurai/100-samurai.wav"
+},
+{
+"id": "steampunk-inventor",
+"name": "Steampunk Inventor",
+"category": "fantasy",
+"img": "library/steampunk-inventor.jpg",
+"voice": "library/steampunk-inventor.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/Steampunk Inventor/086-steampunk-inventor.wav"
+},
+{
+"id": "vampire-lord",
+"name": "Vampire Lord",
+"category": "fantasy",
+"img": "library/vampire-lord.jpg",
+"voice": "library/vampire-lord.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/Vampire Lord/080-vampire-lord.wav"
+},
+{
+"id": "vaporwave-statue",
+"name": "Vaporwave Statue",
+"category": "fantasy",
+"img": "library/vaporwave-statue.jpg",
+"voice": "library/vaporwave-statue.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/Vaporwave Statue/085-vaporwave-statue.wav"
+},
+{
+"id": "victorian-goth",
+"name": "Victorian Goth",
+"category": "fantasy",
+"img": "library/victorian-goth.jpg",
+"voice": "library/victorian-goth.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/Victorian Goth/078-victorian-goth.wav"
+},
+{
+"id": "viking-warrior",
+"name": "Viking Warrior",
+"category": "fantasy",
+"img": "library/viking-warrior.jpg",
+"voice": "library/viking-warrior.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/Viking Warrior/099-viking-warrior.wav"
+},
+{
+"id": "wild-west-cowboy",
+"name": "Wild West Cowboy",
+"category": "fantasy",
+"img": "library/wild-west-cowboy.jpg",
+"voice": "library/wild-west-cowboy.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/Wild West Cowboy/097-wild-west-cowboy.wav"
+},
+{
+"id": "witch",
+"name": "Witch",
+"category": "fantasy",
+"img": "library/witch.jpg",
+"voice": "library/witch.mp3",
+"_wav": "/sessions/rcw-014548dc6uvv5jpwby73zrcc/mnt/free-ai-avatars/Fantasy_GenreX/Witch/081-witch.wav"
+}
+]

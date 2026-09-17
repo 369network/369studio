@@ -46,11 +46,13 @@ async function boot(){ if(!await Shell.mount('employees',{seg:'AI Employees'})) 
 }
 function list(){ $('#list').classList.remove('hidden'); $('#chat').classList.add('hidden');
   $('#emps').innerHTML=EMPLOYEES.map(e=>'<div class="emp" onclick="location.href=\'/employees?e='+e.id+'\'">'
-    +'<div class="bg" style="background:'+e.grad+'"></div><div class="meta"><div class="nm">'+e.name+'</div>'
+    +'<div class="bg" style="background:'+e.grad+'"></div>'+(e.img?'<img class="bg" src="'+e.img+'" style="object-fit:cover;object-position:top">':'')
+    +'<div class="meta"><div class="nm">'+e.name+'</div>'
     +'<div class="role">'+e.role+'</div><span class="call">🎥 Chat '+e.first+'</span></div></div>').join(''); }
 function open_(id){ CUR=EMPLOYEES.find(e=>e.id===id)||EMPLOYEES[0];
   $('#list').classList.add('hidden'); $('#chat').classList.remove('hidden');
-  $('#c-av').style.background=CUR.grad; $('#c-nm').textContent=CUR.name; $('#c-role').textContent=CUR.role;
+  $('#c-av').style.background=CUR.img?('#14151b url('+CUR.img+') center/cover'):CUR.grad; $('#c-nm').textContent=CUR.name; $('#c-role').textContent=CUR.role;
+  if(CUR.voice){$('#c-role').innerHTML=CUR.role+' · <a href="#" onclick="var a=new Audio(\''+CUR.voice+'\');a.play();return false" style="color:var(--lime)">▶ voice</a>';}
   $('#thread').innerHTML='<div class="bub a">Hi, I\'m '+CUR.first+' — your '+CUR.role.toLowerCase()+' at 369 Studio. What are we working on?</div>'; }
 var q=()=>$('#q'); document.addEventListener('input',e=>{if(e.target.id==='q'){e.target.style.height='auto';e.target.style.height=e.target.scrollHeight+'px';}});
 async function send(){ var v=q().value.trim(); if(!v||!CUR)return; q().value=''; q().style.height='auto';

@@ -9,7 +9,7 @@ window.APPS369=[
  {rank:7, id:"amm",       name:"Advanced Movie Maker",emoji:"🎞️", grad:"linear-gradient(135deg,#7048e8,#e64980)", href:"/creator", live:true, desc:"Director-level multi-shot projects."},
  {rank:8, id:"music",     name:"Music Studio",       emoji:"🎵", grad:"linear-gradient(135deg,#1098ad,#22b8cf)", href:"/app?app=music", live:true, desc:"Songs + voiceover, built section by section."},
  {rank:9, id:"watch",     name:"369 Watch",          emoji:"📺", grad:"linear-gradient(135deg,#e03131,#f76707)", href:"/watch", live:true, desc:"Netflix-style channel of AI-made films."},
- {rank:10,id:"influencer",name:"AI Influencer",      emoji:"🧑‍🎤", grad:"linear-gradient(135deg,#d6336c,#7048e8)", href:"/app?app=influencer", live:true, desc:"Build a persistent virtual influencer; reuse across apps."},
+ {rank:10,id:"influencer",name:"AI Influencer",      emoji:"🧑‍🎤", grad:"linear-gradient(135deg,#d6336c,#7048e8)", href:"/library", live:true, desc:"75 ready characters + voices, free. Or build your own; reuse across apps."},
  {rank:11,id:"author",    name:"Author Studio",      emoji:"📖", grad:"linear-gradient(135deg,#5c3d2e,#c3f53c22)", href:"/app?app=author", live:true, desc:"AI novel co-writer — chapters, guided or granular."},
  {rank:12,id:"boosts",    name:"Boosts",             emoji:"🚀", grad:"linear-gradient(135deg,#1c7ed6,#4dabf7)", href:"/apps", live:false, desc:"Promote a post for more reach on the feed."},
  {rank:13,id:"notes",     name:"Notetaker",          emoji:"🎙️", grad:"linear-gradient(135deg,#343a40,#868e96)", href:"/app?app=notes", live:true, desc:"Meeting recorder → transcript + summary + action items."},

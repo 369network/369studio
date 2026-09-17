@@ -320,6 +320,22 @@ def watch(): return _page("watch.html")
 def pricing(): return _page("pricing.html")
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard(): return _page("dashboard.html")
+@app.get("/library", response_class=HTMLResponse)
+def library(): return _page("library.html")
+
+class VoiceReq(BaseModel):
+    text:str; voice_id:str=""
+@app.post("/api/voice")
+def voice(r: VoiceReq, authorization: str = Header(None)):
+    """Voice-clone / TTS lane. Uses the character's 10s sample as the clone reference.
+    Ready-to-wire: enable by setting VOICE_API_KEY (+ VOICE_API_BASE) for a clone TTS
+    provider (e.g. ElevenLabs / Fish Audio / your seed-audio lane)."""
+    auth_user(bearer(authorization))
+    key = os.environ.get("VOICE_API_KEY")
+    if not key:
+        return {"file": None, "note": "Voice-clone lane is wired but off — set VOICE_API_KEY in Render env (ElevenLabs / Fish Audio / seed-audio) to go live. The 10s sample at /static/library/"+(r.voice_id or "<id>")+".mp3 is the clone reference."}
+    # provider call goes here (kept generic); returns a hosted audio URL or served file
+    return {"file": None, "note": "VOICE_API_KEY set — plug the provider call in server/app.py:voice()."}
 @app.get("/config.js")
 def cfg(): return HTMLResponse(f'window.SUPA_URL="{SUPA_URL}";window.SUPA_ANON="{SUPA_ANON}";', media_type="application/javascript")
 app.mount("/static", StaticFiles(directory=os.path.join(SRV,"static")), name="static")
