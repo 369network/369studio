@@ -58,8 +58,9 @@
     <div class="chatbox">
       <textarea id="q" placeholder="Give 369 Studio a task to work on…" rows="1"></textarea>
       <div class="chatrow">
-        <span style="color:var(--faint)">＋</span><span style="color:var(--faint)">👻</span>
-        <span class="mdl">Claude Fable 5.1 ▾ <span title="voice">🎙</span></span>
+        <button class="addbtn" onclick="document.getElementById('up').click()" title="Attach a photo → Creator" style="background:none;color:var(--faint);font-size:18px">＋</button>
+        <input type="file" id="up" accept="image/*" hidden onchange="doUpload(this)">
+        <span class="mdl">369 Agent · GLM-4.5 ▾ <span title="voice">🎙</span></span>
         <button class="send" onclick="ask()">↑</button>
       </div>
     </div>
@@ -126,5 +127,16 @@ async function ask(){
   }catch(e){ document.getElementById(id).innerHTML='<span style="color:var(--crit)">'+e.message+'</span>'; }
 }
 function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+async function doUpload(inp){ var f=inp.files[0]; if(!f)return;
+  var fd=new FormData(); fd.append('file',f);
+  var t=$('#thread'); $('#tag').classList.add('hidden');
+  t.insertAdjacentHTML('beforeend','<div class="bub a" id="upmsg">📎 Uploading '+esc(f.name)+'…</div>');
+  try{ var r=await fetch('/api/upload',{method:'POST',headers:{'Authorization':'Bearer '+Shell.token},body:fd}); var j=await r.json();
+    if(j.ref){ document.getElementById('upmsg').innerHTML='📎 '+esc(j.name||f.name)+' attached — opening Creator with it as your reference…';
+      setTimeout(()=>location.href='/creator?mode=editor&ref='+encodeURIComponent(j.ref)+'&refurl='+encodeURIComponent(j.url),700); }
+    else document.getElementById('upmsg').textContent='Upload failed.'; }
+  catch(e){ document.getElementById('upmsg').textContent='Upload failed: '+e.message; }
+  inp.value='';
+}
 boot();
 </script></body></html>

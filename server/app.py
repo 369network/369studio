@@ -12,7 +12,7 @@ Env (defaults are the 369studio project; anon key is public-safe):
 Run:  cd studio369 && uvicorn server.app:app --host 0.0.0.0 --port 8080
 """
 import os, sys, json, time, sqlite3, threading, subprocess, uuid, urllib.request, urllib.error
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, UploadFile, File
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -23,9 +23,16 @@ os.makedirs(JOBS, exist_ok=True)
 SUPA_URL  = os.environ.get("SUPABASE_URL",  "https://jjyguuctlqgvlbzifpuv.supabase.co")
 SUPA_ANON = os.environ.get("SUPABASE_ANON", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqeWd1dWN0bHFndmxiemlmcHV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2NDM4NTMsImV4cCI6MjEwNTIxOTg1M30.omSAlhkDfaZHALUnyXRD7Qdvu76-5kNKNv204MZ6LvM")
 
-# ---- credit model ----
-MODEL_MULT = {"crun_fast":1.0,"frontier":1.4,"seedance25":1.8,"veo31":3.2,"veo31_fast":1.6,"kling_o3_pro":2.4,"pixverse":0.5}
-RES_MULT = {"480p":1.0,"720p":1.6,"1080p":2.4}; DUR_BASE = {"4s":128,"8s":256,"15s":480}
+# ---- credit model (full model roster, SuperCool-parallel; all route to the Crun engine, price varies) ----
+MODEL_MULT = {
+  "frontier":1.4, "crun_fast":1.0, "free":0.0,
+  "seedance25":1.8, "seedance2_mini":0.8, "seedance2_pro":1.6, "seedance2_fast":0.9,
+  "veo31":3.2, "veo31_fast":1.6, "veo31_lite":1.2,
+  "kling_o3_pro":2.4, "kling_o3_std":1.5,
+  "pixverse":0.5, "ltx2_fast":1.1, "pvideo":0.4, "grok":1.0,
+}
+RES_MULT = {"360p":0.7,"480p":1.0,"720p":1.6,"1080p":2.4}
+DUR_BASE = {"4s":128,"5s":160,"6s":192,"8s":256,"10s":320,"12s":384,"15s":480}
 def credits_for(mode, model, res, dur):
     if mode=="image": return 5
     if mode=="music": return 60
@@ -258,6 +265,23 @@ def file(jid: str):
     if f.startswith("http"): return RedirectResponse(f)           # R2/S3 CDN URL
     if not os.path.exists(f): raise HTTPException(404,"no file")
     return FileResponse(f)
+
+UPLOADS = os.path.join(JOBS, "_uploads"); os.makedirs(UPLOADS, exist_ok=True)
+@app.post("/api/upload")
+async def upload(file: UploadFile = File(...), authorization: str = Header(None)):
+    """Attach a reference image (for Reference→Video / Talking Head / AI Editor). Returns a server ref path."""
+    u = auth_user(bearer(authorization)); uid = u["id"]
+    d = os.path.join(UPLOADS, uid); os.makedirs(d, exist_ok=True)
+    ext = os.path.splitext(file.filename or "img.png")[1][:6] or ".png"
+    name = uuid.uuid4().hex[:10] + ext
+    dst = os.path.join(d, name)
+    with open(dst, "wb") as f: f.write(await file.read())
+    return {"ref": os.path.relpath(dst, ROOT), "url": f"/api/upfile/{uid}/{name}", "name": file.filename}
+@app.get("/api/upfile/{uid}/{name}")
+def upfile(uid: str, name: str):
+    p = os.path.join(UPLOADS, uid, os.path.basename(name))
+    if not os.path.exists(p): raise HTTPException(404, "no file")
+    return FileResponse(p)
 
 @app.get("/api/characters")
 def chars(authorization: str = Header(None)):
