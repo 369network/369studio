@@ -8,6 +8,14 @@
 .apptabs a.on{background:var(--lime);color:var(--lime-ink);border-color:var(--lime)}
 .wrap{max-width:720px;margin:0 auto}
 .field{margin-bottom:12px}.field label{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);display:block;margin-bottom:6px}
+.cast{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:14px}
+.cast .hd{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.cast .chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.cchip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;border:1px solid var(--line2);font-size:12px;cursor:pointer}
+.cchip.on{border-color:var(--lime);color:var(--lime);background:#c3f53c14}
+.cchip img{width:20px;height:20px;border-radius:50%;object-fit:cover}
+.cast .hint{font-size:11px;color:var(--faint);margin-top:8px}
+.cast .hint b{color:var(--lime)}
 .gen{display:inline-flex;flex-direction:column;align-items:center;padding:12px 24px;border-radius:12px;background:var(--lime);color:var(--lime-ink);font-weight:800;margin-top:6px}
 .gen small{font-family:var(--mono);font-size:10.5px;opacity:.8}
 .out{margin-top:20px;border:1px dashed var(--line2);border-radius:16px;padding:24px;text-align:center;color:var(--faint);background:var(--panel)}
@@ -15,6 +23,10 @@
 .out video,.out img{max-width:100%;border-radius:12px;margin-top:8px}
 .pbar{height:6px;border-radius:999px;background:var(--panel2);overflow:hidden;margin:14px auto 0;max-width:320px}.pbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--lime),var(--pink));transition:width .4s}
 .qc{font-family:var(--mono);font-size:11px;margin-top:8px}.qc.pass{color:var(--cyan)}.qc.warn{color:var(--lime)}
+#mention{position:absolute;z-index:80;background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:6px;min-width:200px;max-height:240px;overflow:auto;box-shadow:0 20px 50px -20px #000;display:none}
+#mention button{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:7px 8px;border-radius:8px;font-size:12.5px;color:var(--muted)}
+#mention button:hover,#mention button.on{background:var(--raise);color:var(--text)}
+#mention img{width:22px;height:22px;border-radius:50%;object-fit:cover}
 </style></head>
 <body>
 <div id="shell"></div><div class="glow"></div>
@@ -23,29 +35,74 @@
   <div class="eyebrow" id="kick">App</div>
   <h1 id="nm" style="font-size:26px;margin-top:8px">…</h1>
   <p class="sub" id="sb" style="margin:8px 0 18px">Fill in and generate — same engine, app-shaped prompt.</p>
+
+  <div class="cast" id="cast" hidden>
+    <div class="hd">🎭 Cast — use a saved character</div>
+    <div class="chips" id="castchips"></div>
+    <div class="hint">Tap to attach, or type <b>@</b> in any box to mention a character (e.g. “<b>@Aria</b> holding the product”). <a href="/library" style="color:var(--muted)">+ Library</a></div>
+  </div>
+
   <div id="fields"></div>
   <button class="gen" id="gen" onclick="run()">Generate <small id="cost">—</small></button>
   <div class="out" id="out"><div style="font-size:28px">✨</div><p>Result yahan aayega.</p></div>
   <p class="sub" style="font-size:11px;margin-top:12px">Same backend as Creator — this app shapes the prompt + params (template). QC gate on every render.</p>
 </div></div></div></div>
+<div id="mention"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="/config.js"></script><script src="/static/shell.js"></script>
 <script>
-var $=s=>document.querySelector(s); var APPS=[],CUR=null; var appId=new URLSearchParams(location.search).get('app')||'marketing';
+var $=s=>document.querySelector(s); var APPS=[],CUR=null,CHARS=[],ATT={}; var appId=new URLSearchParams(location.search).get('app')||'marketing';
+function slug(n){return (n||'').trim().replace(/\s+/g,'').toLowerCase();}
 async function boot(){ if(!await Shell.mount('apps',{seg:'Apps'})) return;
   APPS=await (await fetch('/api/apps')).json();
   $('#tabs').innerHTML='<a href="/creator">🎬 Creator</a>'+APPS.filter(a=>a.id!=='creator').map(a=>'<a href="/app?app='+a.id+'" class="'+(a.id===appId?'on':'')+'">'+a.emoji+' '+a.name+'</a>').join('');
   CUR=APPS.find(a=>a.id===appId)||APPS[0]; $('#kick').textContent=CUR.name; $('#nm').textContent=CUR.name;
   $('#fields').innerHTML=CUR.fields.map(f=>'<div class="field"><label>'+f.label+'</label>'+(f.type==='textarea'?'<textarea id="f-'+f.k+'"></textarea>':'<input id="f-'+f.k+'">')+'</div>').join('');
-  showCost();
+  try{ CHARS=await Shell.api('/api/characters')||[]; }catch(e){ CHARS=[]; }
+  renderCast(); showCost();
 }
+function refOf(c){return (c.meta&&c.meta.ref||'').replace(/\\/g,"/");}
+function imgOf(c){return c.meta&&c.meta.img;}
+function renderCast(){ if(!CHARS.length){$('#cast').hidden=true;return;} $('#cast').hidden=false;
+  $('#castchips').innerHTML=CHARS.map(function(c,i){var on=ATT[i];
+    return '<span class="cchip'+(on?' on':'')+'" onclick="toggleC('+i+')">'+(imgOf(c)?'<img src="'+imgOf(c)+'">':'🧑')+(c.name||'Char')+(on?' ✓':'')+'</span>';}).join('');
+}
+function toggleC(i){ if(ATT[i])delete ATT[i]; else ATT[i]=CHARS[i]; renderCast(); }
+
+/* @mention */
+var MEN=$('#mention'),MFIELD=null,MSEL=0,MLIST=[];
+document.addEventListener('input',function(e){ if(!/^f-/.test(e.target.id))return; onType(e.target); });
+document.addEventListener('keydown',function(e){ if(MEN.style.display!=='block')return; if(!/^f-/.test((e.target||{}).id))return;
+  if(e.key==='ArrowDown'){MSEL=Math.min(MSEL+1,MLIST.length-1);paintMenu();e.preventDefault();}
+  else if(e.key==='ArrowUp'){MSEL=Math.max(MSEL-1,0);paintMenu();e.preventDefault();}
+  else if(e.key==='Enter'&&MLIST.length){pickMention(MLIST[MSEL]);e.preventDefault();}
+  else if(e.key==='Escape'){hideMenu();}
+});
+document.addEventListener('click',function(e){ if(!e.target.closest('#mention')&&!/^f-/.test((e.target||{}).id))hideMenu(); });
+function onType(el){ var v=el.value, pos=el.selectionStart, upto=v.slice(0,pos); var m=upto.match(/@([\w]*)$/);
+  if(!m){hideMenu();return;} var q=m[1].toLowerCase();
+  MLIST=CHARS.filter(c=>slug(c.name).indexOf(q)===0||(c.name||'').toLowerCase().indexOf(q)>=0).slice(0,8);
+  if(!MLIST.length){hideMenu();return;} MFIELD=el; MSEL=0;
+  var r=el.getBoundingClientRect(); MEN.style.left=(r.left+window.scrollX)+'px'; MEN.style.top=(r.bottom+window.scrollY+4)+'px'; MEN.style.display='block'; paintMenu();
+}
+function paintMenu(){ MEN.innerHTML=MLIST.map(function(c,i){return '<button class="'+(i===MSEL?'on':'')+'" onmousedown="event.preventDefault()" onclick="pickMention(CHARS['+CHARS.indexOf(c)+'])">'+(imgOf(c)?'<img src="'+imgOf(c)+'">':'🧑')+(c.name||'Char')+'</button>';}).join(''); }
+function pickMention(c){ if(!MFIELD||!c)return; var el=MFIELD,v=el.value,pos=el.selectionStart,upto=v.slice(0,pos);
+  var m=upto.match(/@([\w]*)$/); if(!m){hideMenu();return;}
+  var start=pos-m[0].length; var tag='@'+(c.name||'Char').replace(/\s+/g,'')+' ';
+  el.value=v.slice(0,start)+tag+v.slice(pos); var np=start+tag.length; el.setSelectionRange(np,np); el.focus();
+  var idx=CHARS.indexOf(c); if(idx>=0)ATT[idx]=c; renderCast(); hideMenu();
+}
+function hideMenu(){ MEN.style.display='none'; MLIST=[]; }
+
 async function showCost(){ try{ var c=await Shell.api('/api/cost',{method:'POST',body:JSON.stringify({mode:CUR.mode,model:CUR.model||'crun_fast',res:CUR.res||'480p',dur:CUR.dur||'4s'})}); $('#cost').textContent=(c.credits||0)+' cr'; }catch(e){ $('#cost').textContent=''; } }
 async function run(){
   var fields={}; CUR.fields.forEach(f=>fields[f.k]=($('#f-'+f.k)||{}).value||'');
+  var refs=Object.values(ATT).map(refOf).filter(Boolean);
   var out=$('#out'); out.classList.add('on'); out.innerHTML='<div style="font-size:26px">⚙️</div><p><b>Submitting…</b></p><div class="pbar"><i id="pb"></i></div>';
   var pb=()=>$('#pb'),pct=8; pb().style.width='8%';
   try{
-    var j=await Shell.api('/api/generate',{method:'POST',body:JSON.stringify({template:CUR.id,prompt:fields.prompt||'',fields:fields})});
+    var body={template:CUR.id,prompt:fields.prompt||'',fields:fields}; if(refs.length)body.refs=refs;
+    var j=await Shell.api('/api/generate',{method:'POST',body:JSON.stringify(body)});
     refreshWallet();
     var poll=setInterval(async function(){ pct=Math.min(pct+6,92); if(pb())pb().style.width=pct+'%';
       var s=await Shell.api('/api/job/'+j.job_id);
