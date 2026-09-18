@@ -8,6 +8,7 @@ services:
     dockerContext: .
     region: singapore
     plan: starter            # always-on; free plan sleeps (bad for renders)
+    autoDeploy: true         # push to main → auto-deploy (needs GitHub connected in Render)
     healthCheckPath: /api/apps
     disk:
       name: jobs
@@ -34,4 +35,6 @@ services:
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: VOICE_API_KEY
         sync: false
