@@ -192,7 +192,8 @@ def run_job(jid, prompt, mode, model, res, dur, ar, refs, template="", fields=No
             if token and TEMPLATES.get(template,{}).get("save_character") or (template=="sheets"):
                 nm = (fields or {}).get("name") or "Character"
                 relpath = os.path.relpath(out, ROOT) if not str(out).startswith("http") else out
-                _req("POST","/rest/v1/characters",token,body={"user_id":uid,"name":nm,"type":"Human","gender":"","meta":{"ref":relpath}})
+                imgurl = out if str(out).startswith("http") else f"/api/file/{jid}"
+                _req("POST","/rest/v1/characters",token,body={"user_id":uid,"name":nm,"type":"Human","gender":"","meta":{"ref":relpath,"img":imgurl,"custom":True}})
         except Exception: pass
     except Exception as e:
         _refund(jid); setj(jid,status="failed",err=str(e)[:300])
@@ -357,19 +358,70 @@ def dashboard(): return _page("dashboard.html")
 @app.get("/library", response_class=HTMLResponse)
 def library(): return _page("library.html")
 
+# ---- voice-clone lane (ElevenLabs) ----
+VOICES = os.path.join(JOBS, "_voices"); os.makedirs(VOICES, exist_ok=True)
+VMAP = os.path.join(JOBS, "_voicemap.json")
+DEFAULT_ELEVEN_VOICE = os.environ.get("VOICE_DEFAULT_ID", "21m00Tcm4TlvDq8ikWAM")  # public "Rachel"
+def _vmap():
+    try: return json.load(open(VMAP))
+    except Exception: return {}
+def _vmap_save(m):
+    try: json.dump(m, open(VMAP,"w"))
+    except Exception: pass
+def _eleven_clone(key, sample_path, name):
+    b = "----369"+uuid.uuid4().hex
+    with open(sample_path,"rb") as f: audio=f.read()
+    body  = (f'--{b}\r\nContent-Disposition: form-data; name="name"\r\n\r\n{name}\r\n').encode()
+    body += (f'--{b}\r\nContent-Disposition: form-data; name="files"; filename="s.mp3"\r\nContent-Type: audio/mpeg\r\n\r\n').encode()+audio+b"\r\n"
+    body += (f'--{b}--\r\n').encode()
+    req=urllib.request.Request("https://api.elevenlabs.io/v1/voices/add",data=body,method="POST")
+    req.add_header("xi-api-key",key); req.add_header("Content-Type",f"multipart/form-data; boundary={b}")
+    with urllib.request.urlopen(req,timeout=120) as resp:
+        return json.loads(resp.read().decode())["voice_id"]
+def _eleven_tts(key, voice_id, text, out):
+    body={"text":text,"model_id":"eleven_multilingual_v2"}
+    req=urllib.request.Request(f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}",data=json.dumps(body).encode(),method="POST")
+    req.add_header("xi-api-key",key); req.add_header("Content-Type","application/json"); req.add_header("Accept","audio/mpeg")
+    with urllib.request.urlopen(req,timeout=120) as resp: open(out,"wb").write(resp.read())
+    return out
+
 class VoiceReq(BaseModel):
     text:str; voice_id:str=""
 @app.post("/api/voice")
 def voice(r: VoiceReq, authorization: str = Header(None)):
-    """Voice-clone / TTS lane. Uses the character's 10s sample as the clone reference.
-    Ready-to-wire: enable by setting VOICE_API_KEY (+ VOICE_API_BASE) for a clone TTS
-    provider (e.g. ElevenLabs / Fish Audio / your seed-audio lane)."""
-    auth_user(bearer(authorization))
-    key = os.environ.get("VOICE_API_KEY")
+    """Voice-clone lane. With VOICE_API_KEY (ElevenLabs), clones the character's 10s sample
+    (cached) and speaks the text in that voice. Falls back to a default voice if cloning is
+    unavailable on the plan. Costs 15 credits on success (refunded on failure)."""
+    t = bearer(authorization); auth_user(t)
+    key = os.environ.get("VOICE_API_KEY") or os.environ.get("ELEVEN_API_KEY")
     if not key:
-        return {"file": None, "note": "Voice-clone lane is wired but off — set VOICE_API_KEY in Render env (ElevenLabs / Fish Audio / seed-audio) to go live. The 10s sample at /static/library/"+(r.voice_id or "<id>")+".mp3 is the clone reference."}
-    # provider call goes here (kept generic); returns a hosted audio URL or served file
-    return {"file": None, "note": "VOICE_API_KEY set — plug the provider call in server/app.py:voice()."}
+        return {"file": None, "note": "Voice-clone is wired but off — add VOICE_API_KEY (ElevenLabs) in Render env to go live."}
+    txt = (r.text or "").strip()[:800]
+    if not txt: raise HTTPException(400, "empty text")
+    # hold 15 credits
+    try: rpc("spend_credits", t, {"p_amount":15,"p_item":"Voice · "+(r.voice_id or "tts"),"p_kind":"voice"})
+    except HTTPException: raise HTTPException(402, "Not enough credits")
+    try:
+        vm = _vmap(); vid = r.voice_id or ""
+        sample = os.path.join(SRV,"static","library", vid+".mp3")
+        evid = None
+        if vid and vid in vm: evid = vm[vid]
+        elif vid and os.path.exists(sample):
+            try: evid = _eleven_clone(key, sample, "369-"+vid); vm[vid]=evid; _vmap_save(vm)
+            except Exception: evid = DEFAULT_ELEVEN_VOICE   # plan may not allow cloning
+        else: evid = DEFAULT_ELEVEN_VOICE
+        name = uuid.uuid4().hex[:10]+".mp3"; out = os.path.join(VOICES, name)
+        _eleven_tts(key, evid, txt, out)
+        return {"file": f"/api/voicefile/{name}", "cloned": (evid!=DEFAULT_ELEVEN_VOICE)}
+    except Exception as e:
+        try: rpc("refund_credits", t, {"p_amount":15,"p_item":"refund · voice"})
+        except Exception: pass
+        return {"file": None, "note": "Voice error: "+str(e)[:120]}
+@app.get("/api/voicefile/{name}")
+def voicefile(name: str):
+    p = os.path.join(VOICES, os.path.basename(name))
+    if not os.path.exists(p): raise HTTPException(404,"no file")
+    return FileResponse(p)
 @app.get("/config.js")
 def cfg(): return HTMLResponse(f'window.SUPA_URL="{SUPA_URL}";window.SUPA_ANON="{SUPA_ANON}";', media_type="application/javascript")
 app.mount("/static", StaticFiles(directory=os.path.join(SRV,"static")), name="static")

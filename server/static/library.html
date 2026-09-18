@@ -11,45 +11,100 @@
 .cchar .meta{padding:10px 11px}
 .cchar .nm{font-weight:700;font-size:13px}.cchar .cat{color:var(--faint);font-size:10.5px;text-transform:uppercase;letter-spacing:.08em}
 .cchar .row{display:flex;gap:6px;margin-top:9px}
-.cchar .b{flex:1;text-align:center;padding:7px;border-radius:9px;font-weight:800;font-size:11.5px}
+.cchar .b{flex:1;text-align:center;padding:7px;border-radius:9px;font-weight:800;font-size:11.5px;cursor:pointer}
 .cchar .use{background:var(--lime);color:var(--lime-ink)}
 .cchar .use.done{background:var(--cyan)}
-.cchar .play{background:var(--panel2);border:1px solid var(--line2);flex:0 0 40px}
-.cchar .clone{background:var(--panel2);border:1px solid var(--line2);flex:0 0 40px}
+.cchar .play,.cchar .clone{background:var(--panel2);border:1px solid var(--line2);flex:0 0 40px}
+.cchar .yours{position:absolute;top:8px;left:8px;background:var(--pink);color:#fff;font-size:9px;font-weight:800;padding:3px 7px;border-radius:6px;text-transform:uppercase}
+.addcard{border:1px dashed var(--line2);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;aspect-ratio:3/4;cursor:pointer;color:var(--muted);background:var(--panel)}
+.addcard:hover{border-color:var(--lime);color:var(--text)} .addcard .p{font-size:34px;color:var(--lime)}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--lime);color:var(--text);padding:10px 16px;border-radius:12px;font-size:13px;z-index:50;opacity:0;transition:.3s}
 .toast.on{opacity:1}
 .modal{position:fixed;inset:0;z-index:60;background:#000a;display:none;align-items:center;justify-content:center;padding:20px}
 .modal.on{display:flex}
-.modal .card{background:var(--panel);border:1px solid var(--line2);border-radius:16px;padding:20px;max-width:440px;width:100%}
+.modal .card{background:var(--panel);border:1px solid var(--line2);border-radius:16px;padding:22px;max-width:460px;width:100%}
+.seg{display:flex;gap:6px;margin:12px 0}
+.seg button{flex:1;padding:8px;border-radius:9px;font-weight:700;font-size:12.5px;color:var(--muted);border:1px solid var(--line2)}
+.seg button.on{background:var(--lime);color:var(--lime-ink);border-color:var(--lime)}
+.help{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:14px;font-size:12.5px;color:var(--muted)}
+.help b{color:var(--text)}
+.hidden{display:none}
 </style></head>
 <body>
 <div id="shell"></div><div class="glow"></div>
 <div class="frame"><div class="z"><div class="page">
-  <div class="eyebrow">AI Influencer · Character Library</div>
-  <h1 style="font-size:26px;margin-top:8px">Pick a character. It's free.</h1>
-  <p class="sub" style="margin-top:6px;font-size:13px">75 ready-made identities with matching voices. <b style="color:var(--lime)">Free to use</b> — credits only when you render. "Use" adds it to your Identity picker in Creator & Marketing.</p>
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+    <div>
+      <div class="eyebrow">AI Influencer · Character Library</div>
+      <h1 style="font-size:26px;margin-top:8px">Pick a character. It's free.</h1>
+      <p class="sub" style="margin-top:6px;font-size:13px">75 ready-made identities + your own. <b style="color:var(--lime)">Free to use</b> — credits only when you render.</p>
+    </div>
+    <button class="btn lime" onclick="openAdd()">＋ Add your character</button>
+  </div>
+
+  <div class="help">
+    <b>How to use:</b> Tap <b>Use</b> on any character → it's saved to your Identity library. Then open <b>Creator</b> → set mode to <b>Reference → Video</b> (or Talking Head) → pick the character under <b>Identity</b> → Generate. Same picker shows up in Marketing Studio too.
+  </div>
+
+  <!-- your characters -->
+  <h3 id="mine-h" style="font-size:15px;margin-top:22px" class="hidden">Your characters</h3>
+  <div class="grid g6" id="mine" style="margin-top:12px"></div>
+
+  <!-- built-in -->
+  <h3 style="font-size:15px;margin-top:26px">Built-in library</h3>
   <div class="tabbar" id="tabs"></div>
   <div class="grid g6" id="grid"></div>
 </div></div></div>
 <audio id="au"></audio>
 <div class="toast" id="toast"></div>
+
+<!-- voice clone modal -->
 <div class="modal" id="modal"><div class="card">
   <div class="eyebrow">Voice clone</div><h3 style="font-size:18px;margin-top:6px" id="m-nm"></h3>
   <p class="sub" style="font-size:12.5px;margin-top:6px">Type a line and hear it in this character's voice.</p>
   <textarea id="m-text" rows="3" style="margin-top:10px" placeholder="Type what they should say…"></textarea>
-  <div style="display:flex;gap:8px;margin-top:12px"><button class="btn lime" style="flex:1" onclick="doClone()">Generate voice</button><button class="btn ghost" onclick="closeModal()">Close</button></div>
+  <div style="display:flex;gap:8px;margin-top:12px"><button class="btn lime" style="flex:1" onclick="doClone()">Generate voice</button><button class="btn ghost" onclick="closeModal('modal')">Close</button></div>
   <div class="msg" id="m-msg"></div><audio id="m-au" controls style="width:100%;margin-top:10px;display:none"></audio>
 </div></div>
+
+<!-- add character modal -->
+<div class="modal" id="addmodal"><div class="card">
+  <div class="eyebrow">New character</div><h3 style="font-size:18px;margin-top:6px">Add your character</h3>
+  <div class="seg"><button id="tab-up" class="on" onclick="addMode('up')">Upload a photo</button><button id="tab-gen" onclick="addMode('gen')">Generate with AI</button></div>
+  <label style="font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)">Name</label>
+  <input id="a-name" placeholder="e.g. My Spokesperson" style="margin-top:6px">
+  <div id="pane-up" style="margin-top:12px">
+    <p class="sub" style="font-size:12px">Upload a clear front-facing photo (your creator, product model, mascot…). It becomes a reusable identity.</p>
+    <input type="file" id="a-file" accept="image/*" style="margin-top:8px">
+  </div>
+  <div id="pane-gen" style="margin-top:12px" class="hidden">
+    <p class="sub" style="font-size:12px">Describe the look — we generate a photoreal character (5 cr) and save it.</p>
+    <textarea id="a-look" rows="3" style="margin-top:8px" placeholder="e.g. 25yo female skincare creator, warm smile, minimal beige studio, soft light"></textarea>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:14px"><button class="btn lime" style="flex:1" id="a-go" onclick="doAdd()">Add character</button><button class="btn ghost" onclick="closeModal('addmodal')">Cancel</button></div>
+  <div class="msg" id="a-msg"></div>
+</div></div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="/config.js"></script><script src="/static/shell.js"></script>
 <script>
-var $=s=>document.querySelector(s); var LIB=[],FILT='all',USED={};
+var $=s=>document.querySelector(s); var LIB=[],FILT='all',USED={},MINE=[];
 async function boot(){ if(!await Shell.mount('apps',{seg:'AI Influencer'})) return;
-  try{ LIB=await (await fetch('/static/library/library.json')).json(); }
-  catch(e){ LIB=[]; $('#grid').innerHTML='<p class="sub">Character library is loading… if this persists, the library assets are not deployed.</p>'; }
-  try{var mine=await Shell.api('/api/characters'); (mine||[]).forEach(c=>{if(c.meta&&c.meta.lib)USED[c.meta.lib]=1;});}catch(e){}
+  try{ LIB=await (await fetch('/static/library/library.json')).json(); }catch(e){ LIB=[]; }
+  if(!Array.isArray(LIB)) LIB=[];
+  await loadMine();
   $('#tabs').innerHTML=[['all','All'],['human','Human'],['animal','Animal'],['fantasy','Fantasy']].map(t=>'<button class="'+(t[0]===FILT?'on':'')+'" onclick="setF(\''+t[0]+'\')">'+t[1]+'</button>').join('');
   render();
+}
+async function loadMine(){ try{ MINE=await Shell.api('/api/characters')||[]; }catch(e){ MINE=[]; }
+  USED={}; MINE.forEach(c=>{ if(c.meta&&c.meta.lib)USED[c.meta.lib]=1; });
+  var custom=MINE.filter(c=>c.meta&&c.meta.custom);
+  $('#mine-h').classList.toggle('hidden', MINE.length===0);
+  $('#mine').innerHTML=MINE.map(function(c){var img=(c.meta&&c.meta.img)||''; var isc=c.meta&&c.meta.custom;
+    return '<div class="cchar">'+(isc?'<span class="yours">Yours</span>':'')
+      +(img?'<img class="im" loading="lazy" src="'+img+'">':'<div class="im" style="display:grid;place-items:center;font-size:26px">🧑</div>')
+      +'<div class="meta"><div class="nm">'+(c.name||'Character')+'</div><div class="cat">saved · in Creator picker</div>'
+      +'<div class="row"><a class="b use" href="/creator">Use in Creator →</a></div></div></div>';}).join('');
 }
 function setF(f){FILT=f;document.querySelectorAll('.tabbar button').forEach(b=>b.classList.remove('on'));event.target.classList.add('on');render();}
 function render(){ var list=LIB.filter(c=>FILT==='all'||c.category===FILT);
@@ -66,18 +121,52 @@ function play(id){var c=LIB.find(x=>x.id===id);var a=$('#au');a.src='/static/'+c
 async function use(id,btn){var c=LIB.find(x=>x.id===id);
   try{ await Shell.api('/api/characters',{method:'POST',body:JSON.stringify({name:c.name,type:c.category,gender:'',
         meta:{ref:'server/static/'+c.img,img:'/static/'+c.img,voice:c.voice?('/static/'+c.voice):null,lib:c.id}})});
-    USED[id]=1; btn.classList.add('done'); btn.textContent='✓ Added'; toast(c.name+' added to your Identity library'); }
+    USED[id]=1; btn.classList.add('done'); btn.textContent='✓ Added'; toast(c.name+' added — now pick it in Creator'); loadMine(); }
   catch(e){ toast('Error: '+e.message); }
 }
-function toast(t){var el=$('#toast');el.textContent=t;el.classList.add('on');setTimeout(()=>el.classList.remove('on'),2200);}
+function toast(t){var el=$('#toast');el.textContent=t;el.classList.add('on');setTimeout(()=>el.classList.remove('on'),2600);}
+
+/* voice clone */
 var CLONE=null;
 function openClone(id){CLONE=LIB.find(x=>x.id===id);$('#m-nm').textContent=CLONE.name;$('#m-msg').textContent='';$('#m-au').style.display='none';$('#modal').classList.add('on');}
-function closeModal(){$('#modal').classList.remove('on');}
+function closeModal(id){$('#'+id).classList.remove('on');}
 async function doClone(){var t=$('#m-text').value.trim();if(!t||!CLONE)return;var m=$('#m-msg');m.className='msg';m.textContent='Generating…';
   try{ var r=await Shell.api('/api/voice',{method:'POST',body:JSON.stringify({text:t,voice_id:CLONE.id})});
     if(r.file){var a=$('#m-au');a.src=r.file;a.style.display='block';a.play();m.textContent='';}
     else{m.className='msg';m.textContent=r.note||'Voice lane not enabled yet.';}
   }catch(e){m.className='msg err';m.textContent=e.message;}
 }
+
+/* add character */
+var ADDMODE='up';
+function openAdd(){ $('#a-name').value=''; $('#a-file').value=''; $('#a-look').value=''; $('#a-msg').textContent=''; addMode('up'); $('#addmodal').classList.add('on'); }
+function addMode(m){ ADDMODE=m; $('#tab-up').classList.toggle('on',m==='up'); $('#tab-gen').classList.toggle('on',m==='gen');
+  $('#pane-up').classList.toggle('hidden',m!=='up'); $('#pane-gen').classList.toggle('hidden',m!=='gen'); }
+async function doAdd(){
+  var name=$('#a-name').value.trim(); var m=$('#a-msg'); m.className='msg';
+  if(!name){ m.className='msg err'; m.textContent='Give it a name.'; return; }
+  $('#a-go').disabled=true;
+  try{
+    if(ADDMODE==='up'){
+      var f=$('#a-file').files[0]; if(!f){ m.className='msg err'; m.textContent='Choose a photo.'; $('#a-go').disabled=false; return; }
+      m.textContent='Uploading…';
+      var fd=new FormData(); fd.append('file',f);
+      var up=await (await fetch('/api/upload',{method:'POST',headers:{'Authorization':'Bearer '+Shell.token},body:fd})).json();
+      if(!up.ref) throw new Error('upload failed');
+      await Shell.api('/api/characters',{method:'POST',body:JSON.stringify({name:name,type:'Human',gender:'',meta:{ref:up.ref,img:up.url,custom:true}})});
+      m.textContent=''; $('#addmodal').classList.remove('on'); toast(name+' added to your characters'); loadMine();
+    } else {
+      var look=$('#a-look').value.trim(); if(!look){ m.className='msg err'; m.textContent='Describe the look.'; $('#a-go').disabled=false; return; }
+      m.textContent='Generating character (5 cr)…';
+      var j=await Shell.api('/api/generate',{method:'POST',body:JSON.stringify({template:'influencer',fields:{name:name,look:look}})});
+      var poll=setInterval(async function(){ var s=await Shell.api('/api/job/'+j.job_id);
+        if(s.status==='done'){ clearInterval(poll); m.textContent=''; $('#addmodal').classList.remove('on'); toast(name+' generated & saved'); loadMine(); refreshWallet(); }
+        else if(s.status==='failed'){ clearInterval(poll); m.className='msg err'; m.textContent='Failed: '+(s.err||''); $('#a-go').disabled=false; refreshWallet(); }
+      },4000);
+    }
+  }catch(e){ m.className='msg err'; m.textContent=e.message; }
+  $('#a-go').disabled=false;
+}
+function refreshWallet(){ Shell.api('/api/me').then(x=>{var w=document.getElementById('wallet');if(w)w.textContent=(x.wallet||0).toLocaleString()+' cr';}); }
 boot();
 </script></body></html>
