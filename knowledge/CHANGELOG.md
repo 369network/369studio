@@ -9,8 +9,11 @@
 - `tools/run_crun.py`: always `return_last_frame: true` + auto-saves `cr_<id>_last.png`; `CRUN_HOST=uguu`
   host switch (litterbox 422s on ByteDance fetch); <100 KB output treated as missing.
 - `tools/santan_build2.py` + `tools/santan_run.py` are the reference builder/driver for chained productions.
-- Jev / TypeSafe AI evaluated and NOT adopted (no vision, ~1,200 req/month cap, jevai.org is an unofficial proxy).
-  Take the ledger idea instead. See project doc `claude/jev-typesafe-evaluation.md`.
+- Jev / TypeSafe AI evaluated. **Correction (same day): the rate limit is 1,200 requests per MINUTE, not per
+  month** — an earlier reading of the models table was wrong, and the "too little volume to be usable" conclusion
+  built on it was wrong too. Volume and cost are non-issues ($1-5/mo for our usage). The real blockers are no
+  vision (cannot do frame QC), mid-pack accuracy on their own evals, and no SLA. Never use jevai.org.
+  Ledger still comes first. See project doc `claude/jev-typesafe-evaluation.md`.
 
 # studio369 rule-set changelog
 

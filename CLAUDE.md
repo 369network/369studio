@@ -55,13 +55,24 @@ location; **reset at every location/time cut**. Never retell the previous clip �
 weakness. Shot/reverse-shot = one identity to hold and one mouth to sync per generation — the right filmmaking
 choice and the reliable technical one are the same choice. Inserts (hand, object) need no face and no lip-sync.
 
-**Jev / TypeSafe AI — evaluated 23 Sep 2026, NOT adopted.** Real product, typed text-only decisions
-(choice/score/noul), ~$0.042/M input, ~0.24 s. **No vision — it cannot do frame QC.** Official cap ~1,200
-requests/month kills bulk use at our scale. jevai.org is an unofficial proxy (anonymous domain, registered the
-day after launch) — never paste a production key there; official surface is docs.typesafe.ai. The one idea worth
-stealing needs no Jev at all: **keep a ledger** (clip id → task id → URL → status → last-frame path in
-JSONL/SQLite) so context is never the database on long runs. Full evaluation lives in the project doc
-`claude/jev-typesafe-evaluation.md`.
+**Jev / TypeSafe AI — evaluated 23 Sep 2026, viable for text decisions, NOT for anything visual.** Typed
+text-only decisions (choice/score/noul), **$0.042/M input, output free**, ~0.24 s. Open self-serve signup since
+20 Sep ("available to everyone, no waitlist") at console.typesafe.ai.
+**Volume is NOT a constraint** — official limits are **250k tokens/sec and 1,200 requests per MINUTE** (an
+earlier note in this file said "per month"; that was wrong and is corrected here). Our entire plausible usage
+costs **$1–5/month**. Batch many questions into one call — TypeSafe's own cookbook measures 13 questions batched
+as 12.2x cheaper and 10x faster with identical answers.
+**The real limits:** (a) **no vision — it cannot do frame QC**, images/audio/video "not supported (yet)";
+(b) documented weaknesses in counting, dates, arithmetic, indirection and large noisy state; (c) on TypeSafe's
+OWN published evals Jev is mid-pack on accuracy (67.8%, tied with sonnet 5, ~6 pts below sol/opus 5) — the win
+is cost and latency, not quality; (d) "zero hallucinations" means zero out-of-schema outputs, which they state
+is a non-empirical type-safety claim, not correctness; (e) no SLA, prepaid credits expire in 12 months, rate
+limits "can change without notice" with immediate suspension on breach.
+**Never use jevai.org** — unofficial proxy, anonymous domain registered the day after launch, its key does not
+work on the real API and its own quota dies after ~5 calls. Official surfaces: docs.typesafe.ai direct, or
+OpenRouter (identical $0.042/M, full Decisions API, 5.5% top-up fee) as fallback.
+**Still do the ledger first** (clip id → task id → URL → status → last-frame path in JSONL/SQLite) — it needs no
+Jev at all. Full evaluation: project doc `claude/jev-typesafe-evaluation.md`.
 
 Start every session by loading the `task-observer` skill, then `stack-router`.
 
