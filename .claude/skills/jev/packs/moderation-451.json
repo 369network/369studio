@@ -1,0 +1,39 @@
+{
+  "side": {
+    "type": "choice",
+    "instructions": "Crun returns 451 both when it refuses the PROMPT and when it refuses the rendered OUTPUT. From this error text and context, which was it?",
+    "criteria": {
+      "input": "the prompt was rejected before rendering",
+      "output": "it rendered, then the result was withheld",
+      "unclear": "cannot tell from the evidence given"
+    }
+  },
+  "trigger": {
+    "type": "choice",
+    "instructions": "Which element most likely triggered it?",
+    "criteria": {
+      "garment": "a named garment or undress wording (camisole, strap, bare)",
+      "contact": "physical intimacy — kiss, near-kiss, touching",
+      "skin": "described exposed skin or body focus",
+      "motion": "suggestive motion verbs",
+      "violence": "violent or injury description",
+      "minor_ambiguity": "an age-ambiguous subject",
+      "unclear": "no single clear trigger"
+    }
+  },
+  "rewrite_axis": {
+    "type": "choice",
+    "instructions": "Our fix is always to re-register the same beat more modestly, never to drop it. Which axis should the rewrite move on?",
+    "criteria": {
+      "wardrobe": "name a modest, fully covering garment instead",
+      "blocking": "replace contact with proximity — head on shoulder, hand on forearm",
+      "verbs": "calmer motion verbs, slower camera",
+      "framing": "wider or higher framing, less body in frame",
+      "split": "reblock into two single-subject shots"
+    }
+  },
+  "retry_confidence": {
+    "type": "noul",
+    "instructions": "If we apply that rewrite and resubmit, how likely is it to pass? 1 = very likely, 0 = it will be rejected again."
+  }
+}

@@ -160,3 +160,29 @@ Verified on backfill: total **5,061.0 credits ≈ $24.66**, matching an independ
 silently regressed all 25 shared prompt docs to the old face-in-prompt template), `run_clips.py`,
 `run_v4_clips.py`, `run_flow_kf2.py`. Per the deprecation rule: a disabled lane's runner moves out
 of `tools/`, it does not sit there looking runnable.
+
+## §T — Jev lane (typed text decisions), wired 23 Sep 2026
+
+`tools/jev.py` + `.claude/skills/jev`. `POST https://api.typesafe.ai/v1/systemone`,
+`Authorization: Bearer <JEV_API_KEY>`, model `jev-latest`.
+
+**Request shape** (confirmed against docs.typesafe.ai, not guessed — the four 400s we ate in the
+first evaluation came from guessing): `{state, model, questions}` where `questions` is an
+**object keyed by your ids**. `choice` → `criteria` is a map option→description, max 255.
+`score` → `criteria` is a list of 2–10 ordered levels. `noul` → no criteria, returns 0–1.
+Responses carry `probabilities` and `confidence` for choice/score, plus `usage.input_tokens`.
+
+**Verified behaviour:** the runner's local validation rejects a list-shaped `questions`, a
+list-shaped choice `criteria` and a 1-level score before spending a call; a live `ping` reaches
+the official API and returns a correctly diagnosed `401` with the stored jevai.org key — endpoint,
+auth header and transport are right, only the key is wrong.
+
+**Batch.** One call per *state*, not per question. TypeSafe's cookbook: 13 batched questions are
+12.2× cheaper and 10× faster than 13 calls, same answers. The limit is 1,200 requests per
+**minute**, so looping does not hit a ceiling — it just costs 12× more for nothing.
+
+**Never visual.** Images/audio/video are unsupported. Frame QC stays in `.claude/agents/qc.md`.
+
+**Key:** official only, from console.typesafe.ai, into `~/.config/keys_jev.env` (chmod 600).
+Passed through a 0600 `curl -K` config, never argv. A jevai.org key does not work and must not be
+used. Cost logged to `renders/jev_log.jsonl`; `python3 tools/jev.py cost` totals it.

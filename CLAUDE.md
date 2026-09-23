@@ -75,6 +75,9 @@ clip use `--retry <ids>` — a FAILED clip is otherwise skipped forever because 
   transcript, before and after spend.
 - `.claude/agents/router.md` · `planner.md` · `executor.md` — intent routing, Stage Execution
   Plan authoring, stage execution. All three belong to the archived ported path, not live work.
+- `.claude/skills/jev` — **live.** Typed text decisions (`tools/jev.py`): triage a QC failure,
+  score a prompt against PROMPT-STANDARD before spend, classify a 451, rank a batch. Text only —
+  never for anything visual. Batch every question about one state into ONE call.
 
 ## 6. WHERE THINGS ARE
 
@@ -83,7 +86,7 @@ CLAUDE.md         this file — the live studio rules
 knowledge/        RUNBOOK · PROMPT-STANDARD · CHANGELOG · ARCHITECTURE-minimax-port
                   vendors/ · failures/ · templates/ · workflows/ · image-recipes/
 tools/            run_crun · run_atlas_img · santan_build2 · santan_run · ledger · post
-                  suno · qc_sheet · bench_assemble · capabilities.json
+                  suno · qc_sheet · jev · bench_assemble · capabilities.json
 tools/_disabled/  runners of disabled lanes — they never sit in tools/ looking runnable
 projects/<slug>/  refs/ · docs/ · renders/ · final/
 server/           369 Studio web app (Docker, Render)
@@ -140,3 +143,9 @@ work on the real API and its own quota dies after ~5 calls. Official surfaces: d
 OpenRouter (identical $0.042/M, full Decisions API, 5.5% top-up fee) as fallback.
 **Still do the ledger first** (clip id → task id → URL → status → last-frame path in JSONL/SQLite) — it needs no
 Jev at all. Full evaluation: project doc `claude/jev-typesafe-evaluation.md`.
+**Wired 23 Sep 2026:** `tools/jev.py` + the `jev` skill (`.claude/skills/jev`), with three
+ready packs — `prompt-preflight` (the PROMPT-STANDARD checklist as 8 typed checks, ~$0.00005
+a shot), `qc-triage`, `moderation-451`. The client is verified against the official API: it
+validates question shapes locally and returns a clean diagnosed error. **It needs an official
+key from console.typesafe.ai** in `~/.config/keys_jev.env`; the jevai.org key still on disk
+401s and must be discarded.

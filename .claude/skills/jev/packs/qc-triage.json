@@ -1,0 +1,37 @@
+{
+  "failure_class": {
+    "type": "choice",
+    "instructions": "Given this description of what went wrong with a rendered clip, which known failure class is it?",
+    "criteria": {
+      "costume_strip": "clothing changed, drifted or was removed — fix is the full character sheet as an r2v ref",
+      "identity_drift": "the wrong person, or the face changed across the clip — fix is removing face text from the prompt",
+      "invented_person": "a body, shoulder, hand or reflection that belongs to nobody in the cast — fix is the CAST block",
+      "floating_cloth": "fabric that flies, morphs or detaches — fix is explicit negatives",
+      "moderation_451": "the API rejected it rather than rendering badly",
+      "truncated_download": "the file is under 400 KB or ffprobe cannot read it — not a render problem at all",
+      "black_tail": "the clip ends on black frames — fix is a trim, not a retake",
+      "soft_480p": "just 480p softness, nothing specifically wrong",
+      "other": "none of the known classes"
+    }
+  },
+  "severity": {
+    "type": "score",
+    "instructions": "How serious is this for the finished film?",
+    "criteria": ["cosmetic, ship it", "noticeable but tolerable", "needs a retake", "blocks the chain — the next clip cannot be built on it"]
+  },
+  "retake_justified": {
+    "type": "noul",
+    "instructions": "A retake costs about 88 credits (~$0.43) and the clip must be re-chained. Is spending that justified here, rather than accepting the clip or fixing it in post? 1 = retake, 0 = do not."
+  },
+  "fix_location": {
+    "type": "choice",
+    "instructions": "Where does the fix belong?",
+    "criteria": {
+      "prompt": "rewrite the shot prompt and re-render",
+      "refs": "change which reference plates are passed",
+      "post": "trim, crop or grade in post — no new spend",
+      "runner": "a tooling problem (download, state, chain), not a creative one",
+      "none": "accept as is"
+    }
+  }
+}

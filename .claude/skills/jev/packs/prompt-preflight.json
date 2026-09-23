@@ -1,0 +1,45 @@
+{
+  "face_text": {
+    "type": "noul",
+    "instructions": "A reference character plate is attached to this shot. Does the prompt ALSO describe the character's face, features, skin tone or hair in words? Text describing a face competes with the plate and loses. 1 = it does describe a face (BAD), 0 = it does not (GOOD)."
+  },
+  "cinematic_word": {
+    "type": "noul",
+    "instructions": "Does the prompt use the word 'cinematic', or lean on film-trailer / VFX vocabulary instead of location-documentary capture language? 1 = yes (BAD), 0 = no (GOOD)."
+  },
+  "ref_jobs": {
+    "type": "score",
+    "instructions": "Every @ImageN reference must get exactly one job AND a do-not-copy clause (do not copy the white studio background, the split-screen layout, the passport framing or the standing pose). How well does this prompt do that?",
+    "criteria": ["no ref roles at all", "roles but no do-not-copy clauses", "some refs complete", "every ref has one job and a do-not-copy clause"]
+  },
+  "cast_block": {
+    "type": "score",
+    "instructions": "The CAST block must name every body that can appear in frame and state that every figure, shoulder, hand or reflection at any frame edge belongs to one of them. An unattributed shoulder makes the model invent a person. How complete is the CAST block?",
+    "criteria": ["missing", "names the speakers only", "names everyone but no edge clause", "names everyone and closes the frame edges"]
+  },
+  "ending_state": {
+    "type": "noul",
+    "instructions": "Is there an explicit ENDING STATE block describing where people are and how the room looks at the last frame? It is the continuity reference for the next clip in the chain. 1 = present and specific, 0 = missing or vague."
+  },
+  "audio_block": {
+    "type": "score",
+    "instructions": "AUDIO must be positive-first: state the language of every spoken line, name the speaker, mark the others explicitly silent, and only then exclude background voices, TV, radio and music. Excluding other languages is not excluding other voices.",
+    "criteria": ["no audio block", "lines but no language stated", "language and speaker stated", "positive-first and exclusions complete"]
+  },
+  "beats": {
+    "type": "choice",
+    "instructions": "A 10-second shot should carry three timestamped beats (0-3.5 / 3.5-7 / 7-10). How many distinct beats does this timeline actually describe?",
+    "criteria": {
+      "none": "no timeline or no beats",
+      "one": "a single continuous action",
+      "two": "two beats",
+      "three": "three beats, correctly the target",
+      "too_many": "four or more — too much for 10 seconds"
+    }
+  },
+  "moderation_risk": {
+    "type": "score",
+    "instructions": "Crun returns 451 on both input and output. Rate the chance this prompt trips it: intimate wording, undress, exposed skin, sexual touching, or violent description. Modest wording and calm motion verbs clear it.",
+    "criteria": ["clearly safe", "some risk wording", "likely to be rejected"]
+  }
+}
