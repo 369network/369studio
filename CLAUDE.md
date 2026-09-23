@@ -100,8 +100,11 @@ renders.db        the clip ledger (gitignored, rebuildable)
 
 - **PC master:** `C:\Users\admin\.hub-global\skills\Claude outputs\studio369`
   (device VM: `$HOME/mnt/Claude outputs/studio369`). **Cloud mirror:** `/home/claude/studio369`.
-- PC → cloud with `device_stage_files`; cloud → PC with `zip -0` (+19 MB `split`) +
-  `device_commit_files` — never commit raw mp4/jpg, the bytes get altered.
+- PC → cloud with `device_stage_files`; cloud → PC with `tar czf` + 18 MB `split` +
+  `device_commit_files` — never commit raw mp4/jpg, the bytes get altered. **The part files must
+  keep a `.tgz.part*` name.** Split with a bare name (`split … f.`) and the first part came back
+  5,875 bytes larger, silently corrupting the join — 23 Sep 2026, hisaab-ep04 v3. Always compare
+  each part's size on arrival, then md5 the extracted file against the cloud copy.
 
 ## 7. HOW TO CHANGE A RULE
 
