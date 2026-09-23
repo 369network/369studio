@@ -40,7 +40,7 @@ function render(){ var p=document.getElementById('pane');
       return '<tr><td>'+(l.item||l.kind||'')+'</td><td class="c '+(neg?'minus':'plus')+'">'+(neg?'':'+')+(l.credits||0)+'</td></tr>';}).join('')||'<tr><td class="sub">No activity yet.</td><td></td></tr>';
     p.innerHTML='<div class="sub" style="font-size:12px">Credit balance</div><div class="walletbig">'+((ME.wallet||0).toLocaleString())+'</div>'
       +'<div class="sub" style="font-size:12px">Plan: <b style="color:var(--text);text-transform:capitalize">'+(ME.plan||'free')+'</b></div>'
-      +'<div style="display:flex;gap:10px;margin-top:16px"><a class="btn lime" href="/pricing">Upgrade plan</a><button class="btn ghost" onclick="alert(\'Top-up (Stripe) enable ho jayega jaise hi billing keys Render env me set hongi.\')">Buy credits</button></div>'
+      +'<div style="display:flex;gap:10px;margin-top:16px"><a class="btn lime" href="/pricing">Upgrade plan</a><button class="btn ghost" onclick="alert(\'Credit top-up opens once billing is switched on.\')">Buy credits</button></div>'
       +'<h3 style="font-size:14px;margin-top:24px">Recent activity</h3><table class="led"><tbody>'+led+'</tbody></table>';
   } else if(CUR==="Account"){
     p.innerHTML='<div class="kv"><span class="sub">Name</span><b>'+((ME.name||'—'))+'</b></div>'

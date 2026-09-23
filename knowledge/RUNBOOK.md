@@ -40,7 +40,7 @@ PC → cloud: `device_stage_files`. Cloud → PC: `zip -0` (+ `split -b 19m`) �
 Edit `knowledge/CHANGELOG.md` (new block on top) → `tools/capabilities.json` `_version`/`_rule`/`_drama_rule` → `CLAUDE.md` cost-law line → `.claude/agents/qc.md` gates → `.claude/skills/drama-series/SKILL.md` runtime line → `README.md` → project status doc. Cloud and PC both.
 
 ## I. Crun Seedance 2.0 FAST — the video lane (v7.4)
-Host refs on litterbox (see above). `python3 projects/bench-intimate/docs/crunfast.py submit <id> <prompt.txt> <url1,url2> 480p 16:9 15` → `… poll <id>` → `renders/crunfast_<id>.mp4`. Model `bytedance/seedance2-0-fast-r2v`, 132 cr = $0.64 / 15 s, ~5 min. Backup #2 = Atlas (`prov.py atlas …`, $0.41, ~170 s). Identity = photo/portrait + character sheet as 2 refs. Use only for montage / hero motion / single ≤15 s clips; never costume-critical drama, never chains, never Hindi dialogue. 
+Host refs on litterbox (see above). `python3 projects/bench-intimate/docs/crunfast.py submit <id> <prompt.txt> <url1,url2> 480p 16:9 15` → `… poll <id>` → `renders/crunfast_<id>.mp4`. Model `bytedance/seedance2-0-fast-r2v`, 132 cr = $0.64 / 15 s, ~5 min. Backup #2 = Atlas (`prov.py atlas …`, $0.41, ~170 s). Identity = photo/portrait + character sheet as 2 refs. **SUPERSEDED 23 Sep 2026.** This line was a v7.3-era caveat written before Crun was the only lane. v7.4 made Crun every shot, and santan is costume-critical drama, chained, in Hindi — all three of the things this said never to do. What actually holds: the full character sheet must be an r2v ref (§L) or clothing drifts 3/3; chain within a location and reset at every location/time cut; Hindi dialogue works but must be whisper-checked because the prompt is in English. 
 
 ## J. Mode C — multi-shot ref-to-video (drama DEFAULT for dialogue scenes; v7.4 on Crun, refs ≤9)
 **When:** same room, ≤2 speaking characters, ≤3 dialogue beats per clip, ≤15 s. Establishers, action, prop/vehicle "arrival", 3+ cast → Mode B (keyframe). 5–9 refs needed → same prompt on `protoface_h3` (viggle caps at 4 refs — docs: "at most 4 reference images", 1 ref video, no ref audio).
@@ -107,3 +107,56 @@ what it is, modest/high-neckline wardrobe wording, calmer motion verbs — not b
 - Character-sheet QC: check the passport panel for a **cropped/half face** (split line running through the face) —
   hit once on SUMAN. Fix by demanding *"entire face fully visible and centred inside the left panel, both cheeks
   and both ears in frame, not cropped, face not touching the panel edge."*
+
+## §R — 369 Studio Render deploy wiring (verified 23 Sep 2026)
+
+- Repo: **`369network/369studio`**, branch `main`. There is no `369b` repo — that name was wrong in earlier notes.
+- Service: `369studio`, Render service ID `srv-dalu0idbedkc738abl3g`, Docker, Starter, Singapore, Blueprint-managed.
+- Live URL is **https://three69studio.onrender.com** (NOT `369studio.onrender.com` — Render rejected the leading digit). `PUBLIC_URL` in `render.yaml` still says the wrong one; fix it on the next code change.
+- **Auto-Deploy gotcha:** Render's UI can show Auto-Deploy = "On Commit" while nothing ever deploys. The real switch is the **Render GitHub App installation**. Symptom: Account Settings → Account Security → Git Deployment Credentials → the GitHub entry expands to *"No repositories found"*, and the repo has no webhook under GitHub → Settings → Webhooks. Fix: install the Render GitHub App (`https://github.com/apps/render/installations/new`) scoped to the repo. Verified working 23 Sep 2026 — the credential now lists `369network/369studio`.
+- Webhook only fires on **new** pushes; commits made while the app was missing never deploy on their own. Trigger a Manual Deploy once to resync.
+- Env vars present: `ATLAS_KEY`, `CRUN_KEY`, `GLM_API_KEY`, `PUBLIC_URL`, `SUNOAPI_KEY`, `SUPABASE_ANON`, `SUPABASE_URL`.
+  Still missing (declared `sync: false` in `render.yaml`, must be set by hand in the dashboard): **`VOICE_API_KEY`**, `SUPABASE_SERVICE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`. Nipam adds these himself — never paste a key into a web field.
+- **Open risk:** Events log shows `Instance failed — ran out of memory (used over 512MB)` on 18 Sep. Starter plan is 512 MB; renders will trip it again. Either bump the compute plan or keep heavy work off the web dyno.
+
+## §S — The clip ledger (`tools/ledger.py`, built 23 Sep 2026)
+
+One SQLite index at `renders.db` (gitignored; rebuildable). Renders on disk stay the source of
+truth — this joins them to task ids, credits, chain state and errors, which nothing did before.
+
+```
+python3 tools/ledger.py backfill --all      rebuild every project from state + sidecars
+python3 tools/ledger.py cost [proj]         spend per project + metering coverage
+python3 tools/ledger.py show <proj>         per-clip: status, seconds, MB, credits, chain, last-frame
+python3 tools/ledger.py chain <proj>        which clips are BLOCKED because their chain ref is missing
+python3 tools/ledger.py failed <proj>       ids needing a retake, and the exact retry command
+```
+
+Verified on backfill: total **5,061.0 credits ≈ $24.66**, matching an independent sum of every
+`*.mp4.json` exactly. Two things the ledger found that nothing else could:
+- **Double counting.** Manifest ids use hyphens (`ah-01`), `run_crun.py` writes underscores
+  (`cr_ah_01.mp4`). Keyed naively that is two rows per clip and twice the cost. The ledger
+  canonicalises on the underscored form.
+- **Orphan sidecars** — a `.mp4.json` with no `.mp4` means we paid and got nothing.
+  `afterhours/sd_04` is one (132.17 cr ≈ $0.64). These now show as `missing`, not silence.
+
+### `run_crun.py` changes that go with it
+- **`--retry` / `--force <ids>`** — clears those ids from `crun_state.json` first. Before this a
+  FAILED clip could never be resubmitted: the failure handler left `tid` in place and the submit
+  loop skips any id that has one. Hand-editing the state file was the only recovery.
+- **`--dry-run`** — resolves every prompt file and ref and prints what is missing, **before** any
+  spend. On santan it correctly shows s6 ready and s7 blocked (its chain ref does not exist yet).
+- **Downloads are verified**: 3 attempts, return code and size both checked, `< CRUN_MIN_BYTES`
+  (default **400 KB**, was 100 KB) is recorded as `truncated` rather than success. The old floor
+  let `_old_v1/cr_s3.mp4` through at 196 KB with no moov atom.
+- The sidecar is written **before** the download, so the media URL survives a failed transfer.
+- A `success` status with empty `media_urls` is now a recorded failure, not a `KeyError` that
+  killed the poll loop and abandoned every other in-flight clip.
+- The `[ids…]` filter now applies to the poll phase too — a single-scene call no longer drags in
+  every other unfinished scene in the project.
+
+### Retired
+`tools/_disabled/` now holds `santan_build.py` (v1 — wrote to the same paths as v2 and would have
+silently regressed all 25 shared prompt docs to the old face-in-prompt template), `run_clips.py`,
+`run_v4_clips.py`, `run_flow_kf2.py`. Per the deprecation rule: a disabled lane's runner moves out
+of `tools/`, it does not sit there looking runnable.

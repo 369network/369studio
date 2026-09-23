@@ -1,0 +1,15 @@
+# The image only needs the server + the runners. projects/ is 4.6 GB of finished mp4s and QC
+# stills that were being copied into every Render build.
+projects/
+knowledge/
+.claude/
+.git/
+*.zip
+**/__pycache__/
+**/*.pyc
+server/jobs/
+server/jobs.db
+server/studio.db
+.config/
+*.env
+!tools/keys.env.example

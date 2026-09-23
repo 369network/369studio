@@ -14,7 +14,14 @@ for kp in (os.path.expanduser('~/.config/keys_atlas.env'),os.path.join(root,'.co
         for l in open(kp):
             if l.startswith('ATLAS_KEY='): key=l.strip().split('=',1)[1].strip('"')
 if not key: sys.exit('ATLAS_KEY missing')
-API='https://api.atlascloud.ai/api/v1/model'; H=['-H',f'Authorization: Bearer {key}','-H','Content-Type: application/json']
+API='https://api.atlascloud.ai/api/v1/model'
+# SECURITY: the key was in argv and readable via `ps`. curl -K reads it from a 0600 file.
+import tempfile, atexit
+_kfd,_kcfg=tempfile.mkstemp(prefix='.atlas-',suffix='.conf'); os.close(_kfd); os.chmod(_kcfg,0o600)
+with open(_kcfg,'w') as _f:
+    _f.write(f'header = "Authorization: Bearer {key}"\nheader = "Content-Type: application/json"\n')
+atexit.register(lambda: os.path.exists(_kcfg) and os.remove(_kcfg))
+H=['-K',_kcfg]
 os.makedirs(f'{proj}/renders',exist_ok=True); os.makedirs(f'{proj}/refs',exist_ok=True)
 sp=f'{proj}/renders/atlas_img_state.json'; up=f'{proj}/renders/crun_urls.json'
 S=json.load(open(sp)) if os.path.exists(sp) else {}; U=json.load(open(up)) if os.path.exists(up) else {}

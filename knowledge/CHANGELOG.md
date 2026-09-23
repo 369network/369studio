@@ -1,3 +1,77 @@
+## v7.8 — 23 Sep 2026 — system audit: every remaining problem closed
+
+Follows the four-part audit (project doc `claude/system-audit-2026-09-23.md`). Steps 1 and 2 were
+the security patches and the ledger; this block is everything that was left.
+
+**Rule layer re-joined to the execution layer (was B7).**
+- `CLAUDE.md` 53 KB → 9 KB, current-only. The 41 KB MiniMax port moved verbatim to
+  `knowledge/ARCHITECTURE-minimax-port.md`, headed as archived — no production ever ran it.
+- Dropped as false: "Do not use shell, Python, ffprobe, PIL, or curl for media work" (that is the
+  entire pipeline); "Default direct-video selection is H3 (fal lane by default)"; the v6 fallback
+  chain; "finals 1080p viggle"; the FAL/REPLICATE/POLLO/PROTOFACE/VGENV key list; "images = Atlas
+  only, unlimited MCPs disabled".
+- `tools/capabilities.json` v7.8: video default `protoface_h3` → **`seedance_fast_crun`**; image
+  default `higgsfield_unlimited_mcp` → **`topview_unlimited_mcp`** with `atlas_gpt_image2` as the
+  declared fallback; 15 dead video lanes flagged `enabled: false` with the date they were retired.
+- `tools/gen.py`: new `assert_lane()` guard refuses any lane marked disabled — nothing checked
+  this before, so a call without `--lane` aimed at a banned paid vendor. Fixed the one-line
+  `if …: raise …; prompt=…; out=…` that put the assignments inside the if-body and made
+  `gen.py image` raise `NameError` on every allowed lane.
+- **One image law, in one place.** `stack-router/SKILL.md` ("images are NEVER paid"), `README.md`
+  ("EVERY image on Atlas") and RUNBOOK §Q all said different things; all now say: prefer the ₹0
+  topview lane, Atlas is the paid fallback for edit-with-refs.
+- RUNBOOK §I's "never costume-critical drama, never chains, never Hindi dialogue" marked
+  SUPERSEDED — santan is all three, and v7.4 overrode it 8 days earlier.
+
+**QC reconnected (was B8).**
+- `.claude/agents/qc.md` rewritten against the real layout (`refs/`, `docs/s*.txt`,
+  `scenes_A.json` — it was reading `assets/characters/` and `docs/storyboard.md`, neither of which
+  exists) and the real failure modes: costume strip, identity drift, invented background people,
+  floating cloth, 451 on input AND output, truncated download, cropped sheet face, black tail,
+  480p softness. Adds a **pre-spend** gate (prompt-standard checklist + `--dry-run` +
+  `ledger.py chain`) — the cheapest place to catch anything.
+- `tools/bench_qc.py` retired: it globbed `vg*_` / `c2_` and was structurally blind to every
+  `cr_*.mp4` since 15 Sep. Replaced by **`tools/qc_sheet.py`** — any project, any lane, tile
+  sheets plus hard checks (size, ffprobe readability, audio track, black tail, missing
+  last-frame) and a non-zero exit so it can gate a script.
+- First two vendor cards for the lanes we actually use: `knowledge/vendors/crun-seedance.md` and
+  `knowledge/vendors/atlas-gpt-image2.md`. The folder had 16 cards and none for Crun or Atlas.
+
+**Platform (was B5 / B11).**
+- Whisper is now one cached instance behind `QC_WHISPER` (default model `tiny`), not a fresh
+  400–500 MB `small` model per job inside a 512 MB web process — that was the OOM loop.
+- `MAX_CONCURRENT_JOBS` semaphore (default 2); nothing capped in-flight renders before.
+- **Reaper**: on boot every row still `running` is orphaned by definition — failed and refunded;
+  a background sweep does the same for anything past `JOB_MAX_AGE`. Restarts used to leave rows
+  stuck at `running` forever with the credits already spent.
+- Stripe: `/api/stripe/checkout` now authenticates the caller instead of trusting `user_id` from
+  the request body; webhook is idempotent on `event.id`; a new subscription no longer grants
+  month one twice (`checkout.session.completed` defers to `invoice.paid`). A startup warning
+  fires while `PLANS` still holds placeholder price ids.
+- **Character library — the audit's claim here was wrong, twice.** The first pass reported
+  `server/static/library/` as missing; the second said it existed on the PC but was never
+  committed. Neither is true: **all 150 files (75 faces + 74 voice samples + `library.json`) have
+  been tracked in the repo since before this audit**, so Render has always served them. What was
+  actually missing was the folder in the *cloud working copy*, which is what produced the 404s
+  observed locally. `.gitignore` gains `!server/static/library/*.mp3` anyway — not to fix a break,
+  but so a NEW voice sample dropped into that folder is not silently skipped by the blanket
+  `*.mp3` rule (which never affected the already-tracked files).
+  The voice endpoint does now say in its response when it fell back to the stock voice and why —
+  that part stands.
+
+**Keys out of `ps` (was B11).** `run_crun.py`, `run_atlas_img.py` and `gen.py` passed the API key
+as `-H "Authorization: …"` in argv, readable by any local process. All three now write a 0600
+`curl -K` config removed at exit. Verified equivalent against httpbin.
+
+**LoopGuard (was B11).** `hooks/anti_loop.py` exempts the resumable runners — RUNBOOK §O's
+documented recovery is "just re-invoke", which the guard was blocking on the third try. History
+parsing is defensive (a torn line used to crash the hook instead of allowing the call) and writes
+are atomic. `.claude/settings.json` matcher now includes `Task` as well as `Agent` — the
+sub-agent tool is `Task`, so sub-agent dispatch was never guarded at all.
+
+**Retired to `tools/_disabled/`:** `santan_build.py`, `run_clips.py`, `run_v4_clips.py`,
+`run_flow_kf2.py`, `bench_qc.py`.
+
 # v7.7 — 23 Sep 2026 — Prompt standard mandatory
 
 - `knowledge/PROMPT-STANDARD.md` added and referenced from CLAUDE.md. Every video prompt now written to it.

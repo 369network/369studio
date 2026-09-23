@@ -18,8 +18,22 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRV  = os.path.join(ROOT, "server"); JOBS = os.path.join(SRV, "jobs"); DB = os.path.join(SRV, "jobs.db")
+SRV  = os.path.join(ROOT, "server"); JOBS = os.path.join(SRV, "jobs")
 os.makedirs(JOBS, exist_ok=True)
+# SECURITY/DURABILITY: the DB must live INSIDE the mounted disk (render.yaml mountPath=/app/server/jobs).
+# It used to sit at server/jobs.db — on the ephemeral container filesystem — so every redeploy wiped
+# job history while the renders it indexed survived. Migrate the old file once, then always use the disk.
+DB = os.path.join(JOBS, "jobs.db")
+_OLD_DB = os.path.join(SRV, "jobs.db")
+if os.path.exists(_OLD_DB):
+    try:
+        if not os.path.exists(DB):
+            import shutil; shutil.copy2(_OLD_DB, DB)
+        # The old file holds JWTs written by an earlier build. Scrub them, then take it out of the
+        # way so nothing reads or ships it again.
+        _c = sqlite3.connect(_OLD_DB); _c.execute("UPDATE jobs SET token=NULL"); _c.commit(); _c.close()
+        os.replace(_OLD_DB, _OLD_DB + ".migrated")
+    except Exception: pass
 SUPA_URL  = os.environ.get("SUPABASE_URL",  "https://jjyguuctlqgvlbzifpuv.supabase.co")
 SUPA_ANON = os.environ.get("SUPABASE_ANON", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqeWd1dWN0bHFndmxiemlmcHV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2NDM4NTMsImV4cCI6MjEwNTIxOTg1M30.omSAlhkDfaZHALUnyXRD7Qdvu76-5kNKNv204MZ6LvM")
 
@@ -35,6 +49,7 @@ MODEL_MULT = {
   "kling_o3_pro":1.0, "kling_o3_std":1.0,
   "pixverse":1.0, "ltx2_fast":1.0, "pvideo":1.0, "grok":1.0,
 }
+FREE_MODEL_DAILY_CAP = int(os.environ.get("FREE_MODEL_DAILY_CAP", "5"))  # free model = 0 credits but a REAL paid render
 RES_MULT = {"360p":0.7,"480p":1.0,"720p":1.6,"1080p":2.4}
 DUR_BASE = {"4s":128,"5s":160,"6s":192,"8s":256,"10s":320,"12s":384,"15s":480}
 def credits_for(mode, model, res, dur):
@@ -70,18 +85,74 @@ def rpc(name, token, args): return _req("POST", f"/rest/v1/rpc/{name}", token, a
 
 # ---- local jobs db ----
 def jdb():
-    c = sqlite3.connect(DB); c.row_factory = sqlite3.Row; return c
+    # WAL + busy_timeout: render threads write while API requests read. Default journal mode takes a
+    # whole-DB write lock, which surfaced to users as a bogus "render failed".
+    c = sqlite3.connect(DB, timeout=30); c.row_factory = sqlite3.Row
+    try:
+        c.execute("PRAGMA journal_mode=WAL"); c.execute("PRAGMA busy_timeout=30000")
+    except Exception: pass
+    return c
 def initj():
     c = jdb(); c.execute("CREATE TABLE IF NOT EXISTS jobs(id TEXT PRIMARY KEY, uid TEXT, token TEXT, ts INT, status TEXT, credits INT, kind TEXT, label TEXT, file TEXT, err TEXT, qc TEXT, qc_note TEXT, transcript TEXT, retried INT DEFAULT 0)")
-    for col,typ in (("qc","TEXT"),("qc_note","TEXT"),("transcript","TEXT"),("retried","INT DEFAULT 0")):
+    for col,typ in (("qc","TEXT"),("qc_note","TEXT"),("transcript","TEXT"),("retried","INT DEFAULT 0"),
+                    ("model","TEXT"),("refunded","INT DEFAULT 0")):
         try: c.execute(f"ALTER TABLE jobs ADD COLUMN {col} {typ}")
         except Exception: pass
+    # SECURITY: we used to store the caller's Supabase JWT in this table forever. One file read
+    # (or the old ref-traversal hole) was a session takeover for every user who had ever rendered.
+    # Scrub any tokens written by an earlier build; new rows never store one.
+    try: c.execute("UPDATE jobs SET token=NULL WHERE token IS NOT NULL")
+    except Exception: pass
     c.commit(); c.close()
 def setj(jid, **kw):
     c = jdb(); c.execute("UPDATE jobs SET "+",".join(f"{k}=?" for k in kw)+" WHERE id=?", list(kw.values())+[jid]); c.commit(); c.close()
 initj()
 
+def _reap_orphans():
+    """Render work runs in daemon threads. Any restart — redeploy, OOM kill, failed health check —
+    kills them, and the row stayed 'running' forever with the credits already deducted. On boot,
+    anything still 'running' is by definition orphaned: fail it and return the credits."""
+    try:
+        c = jdb(); rows = c.execute("SELECT id FROM jobs WHERE status='running'").fetchall(); c.close()
+        for r in rows:
+            setj(r["id"], status="failed", err="interrupted by a restart; credits returned")
+            _refund(r["id"])
+        if rows: print(f"[reaper] released {len(rows)} orphaned job(s)", flush=True)
+    except Exception as e:
+        print(f"[reaper] {str(e)[:120]}", flush=True)
+
+def _reap_stale(max_age=int(os.environ.get("JOB_MAX_AGE","3900"))):
+    """A job still 'running' well past the runner's own timeout is not coming back."""
+    while True:
+        time.sleep(600)
+        try:
+            cut = int(time.time()) - max_age
+            c = jdb(); rows = c.execute("SELECT id FROM jobs WHERE status='running' AND ts<?", (cut,)).fetchall(); c.close()
+            for r in rows:
+                setj(r["id"], status="failed", err="timed out; credits returned"); _refund(r["id"])
+            if rows: print(f"[reaper] timed out {len(rows)} job(s)", flush=True)
+        except Exception: pass
+
 # ---- QC gate ----
+# MEMORY: WhisperModel("small") is ~400-500 MB resident and was constructed FRESH on every video
+# job, inside the web process, on a 512 MB box. Two concurrent renders was a guaranteed OOM kill,
+# which restarted the container and orphaned every in-flight job. One cached instance, and an
+# off switch for small instances (QC_WHISPER=0) — a worker process is still the real fix.
+_WHISPER = None
+_WHISPER_LOCK = threading.Lock()
+def _whisper():
+    global _WHISPER
+    if os.environ.get("QC_WHISPER", "1") in ("0", "false", "off"): return None
+    if _WHISPER is None:
+        with _WHISPER_LOCK:
+            if _WHISPER is None:
+                from faster_whisper import WhisperModel
+                _WHISPER = WhisperModel(os.environ.get("QC_WHISPER_MODEL", "tiny"), compute_type="int8")
+    return _WHISPER
+
+# Nothing capped in-flight renders: N users pressing Generate = N subprocesses + N ffmpeg runs.
+MAX_CONCURRENT_JOBS = int(os.environ.get("MAX_CONCURRENT_JOBS", "2"))
+_JOB_SLOTS = threading.Semaphore(MAX_CONCURRENT_JOBS)
 def qc_image(path, ar):
     try:
         sz = os.path.getsize(path)
@@ -96,9 +167,11 @@ def qc_video(path, dur):
         note.append(f"{secs:.1f}s"); ok = secs >= max(2, dur*0.6)
         wav=path+".wav"; subprocess.run(["ffmpeg","-y","-loglevel","error","-i",path,"-ac","1","-ar","16000",wav],timeout=120)
         try:
-            from faster_whisper import WhisperModel
-            m=WhisperModel("small",compute_type="int8"); seg,_=m.transcribe(wav,language="en")
-            transcript=" ".join(s.text.strip() for s in seg)[:400]
+            m=_whisper()
+            if m is None: note.append("whisper off")
+            else:
+                seg,_=m.transcribe(wav,language=os.environ.get("QC_WHISPER_LANG","en"))
+                transcript=" ".join(s.text.strip() for s in seg)[:400]
         except Exception: note.append("whisper n/a")
         try: os.remove(wav)
         except Exception: pass
@@ -162,10 +235,14 @@ def _render_once(jdir, prompt, mode, res, dur, ar, refs, fields=None, audio=True
 
 def run_job(jid, prompt, mode, model, res, dur, ar, refs, template="", fields=None, uid=None, token=None, audio=True):
     jdir = os.path.join(JOBS, jid); fields = fields or {}
+    with _JOB_SLOTS:
+        _run_job_inner(jid, jdir, prompt, mode, model, res, dur, ar, refs, template, fields, uid, token, audio)
+
+def _run_job_inner(jid, jdir, prompt, mode, model, res, dur, ar, refs, template, fields, uid, token, audio):
     try:
         out = _render_once(jdir, prompt, mode, res, dur, ar, refs, fields, audio)
         if not (os.path.exists(out) and os.path.getsize(out)>0):
-            _refund(jid); setj(jid,status="failed",err="no output produced"); return
+            _refund(jid, token); setj(jid,status="failed",err="no output produced"); return
         # QC gate (technical)
         if mode=="image": q=qc_image(out,ar)
         elif mode=="video": q=qc_video(out,int(dur.replace("s","")))
@@ -196,15 +273,79 @@ def run_job(jid, prompt, mode, model, res, dur, ar, refs, template="", fields=No
                 _req("POST","/rest/v1/characters",token,body={"user_id":uid,"name":nm,"type":"Human","gender":"","meta":{"ref":relpath,"img":imgurl,"custom":True}})
         except Exception: pass
     except Exception as e:
-        _refund(jid); setj(jid,status="failed",err=str(e)[:300])
-def _refund(jid):
-    c=jdb(); r=c.execute("SELECT token,credits,label FROM jobs WHERE id=?", (jid,)).fetchone(); c.close()
-    if r:
-        try: rpc("refund_credits", r["token"], {"p_amount": r["credits"], "p_item": "refund · "+(r["label"] or "")})
-        except Exception: pass
+        _refund(jid, token); setj(jid,status="failed",err=str(e)[:300])
+def _refund(jid, token=None):
+    """Return a failed job's credits.
+
+    Two changes from the old version:
+      - the JWT is no longer read from the DB (we don't store it); it is passed in from the worker.
+      - if SUPABASE_SERVICE_KEY is set we refund with the service role instead. That matters because
+        a user JWT expires in ~1 h while a video job can run 50 min + a QC retry, so the long
+        expensive jobs were exactly the ones whose refund 401'd — silently, into `except: pass`,
+        while the UI told the user "Credits refunded."
+      - a refund that does not land is recorded, not swallowed.
+    """
+    c=jdb(); r=c.execute("SELECT uid,credits,label FROM jobs WHERE id=?", (jid,)).fetchone(); c.close()
+    if not r: return
+    item = "refund · "+(r["label"] or "")
+    svc = os.environ.get("SUPABASE_SERVICE_KEY","")
+    if svc:
+        try:
+            req = urllib.request.Request(f"{SUPA_URL}/rest/v1/rpc/add_credits",
+                data=json.dumps({"p_user": r["uid"], "p_amount": r["credits"], "p_item": item}).encode(), method="POST")
+            req.add_header("apikey", svc); req.add_header("Authorization", f"Bearer {svc}")
+            req.add_header("Content-Type","application/json")
+            with urllib.request.urlopen(req, timeout=20): pass
+            setj(jid, refunded=1); return
+        except Exception as e:
+            print(f"[refund] service-role refund failed for {jid}: {str(e)[:120]}", flush=True)
+    if token:
+        try:
+            rpc("refund_credits", token, {"p_amount": r["credits"], "p_item": item})
+            setj(jid, refunded=1); return
+        except Exception as e:
+            print(f"[refund] user-token refund failed for {jid}: {str(e)[:120]}", flush=True)
+    setj(jid, refunded=-1)   # -1 = owed, never returned. Reconcile these.
+    print(f"[refund] UNREFUNDED {jid}: {r['credits']} credits owed to {r['uid']}", flush=True)
+
+# ---- reference-path allow-list ----
+# SECURITY: r.refs is raw client input and is handed to the runners, which curl -F @<path> the file
+# to a PUBLIC host to give the model a fetchable URL. Before this guard, refs=["../../root/.config/
+# keys_crun.env"] published our API keys. A ref is only ever one of two things:
+#   1. something this user uploaded    -> server/jobs/_uploads/<uid>/<file>
+#   2. an output of this user's own job -> server/jobs/<jid>/<file>, where jobs.uid == uid
+# Anything else is rejected and dropped.
+REF_EXTS = {".png",".jpg",".jpeg",".webp"}
+MAX_UPLOAD_BYTES = int(os.environ.get("MAX_UPLOAD_MB", "12")) * (1 << 20)
+def safe_refs(uid, paths):
+    up_root = os.path.realpath(os.path.join(JOBS, "_uploads", uid))
+    jobs_root = os.path.realpath(JOBS)
+    ok = []
+    for p in (paths or []):
+        if not isinstance(p, str) or not p or p.startswith(("http://","https://")): continue
+        full = os.path.realpath(os.path.join(ROOT, p))
+        if not os.path.isfile(full): continue
+        if os.path.splitext(full)[1].lower() not in REF_EXTS: continue
+        if full == up_root or full.startswith(up_root + os.sep):
+            ok.append(full); continue
+        # a job output: server/jobs/<jid>/... and that job must belong to this user
+        if full.startswith(jobs_root + os.sep):
+            rel = os.path.relpath(full, jobs_root).split(os.sep)
+            if len(rel) >= 2 and not rel[0].startswith("_"):
+                try:
+                    c = jdb(); row = c.execute("SELECT uid FROM jobs WHERE id=?", (rel[0],)).fetchone(); c.close()
+                except Exception: row = None
+                if row and row["uid"] == uid: ok.append(full); continue
+        print(f"[safe_refs] rejected ref from uid={uid}: {p!r}", flush=True)
+    return ok[:9]
 
 # ---- API ----
 app = FastAPI(title="369 Studio API v2")
+
+@app.on_event("startup")
+def _startup():
+    _reap_orphans()
+    threading.Thread(target=_reap_stale, daemon=True).start()
 class CostReq(BaseModel):
     mode:str="video"; model:str="crun_fast"; res:str="480p"; dur:str="15s"
 class GenReq(CostReq):
@@ -247,16 +388,24 @@ def generate(r: GenReq, authorization: str = Header(None)):
         plan = ((prof or [{}])[0] or {}).get("plan","free")
         if str(plan).lower() in ("", "free", "none", None):
             raise HTTPException(402, "Free Model requires an active paid plan")
+        # MONEY: the free model costs 0 credits but still submits a real, paid Crun job. Without a
+        # ceiling any cheapest-tier account could render unlimited video at our expense. Cap it.
+        since = int(time.time()) - 86400
+        c=jdb(); used=c.execute("SELECT COUNT(*) FROM jobs WHERE uid=? AND model='free' AND ts>? AND status!='failed'",
+                                (uid, since)).fetchone()[0]; c.close()
+        if used >= FREE_MODEL_DAILY_CAP:
+            raise HTTPException(429, f"Free Model limit reached ({FREE_MODEL_DAILY_CAP}/day). Pick another model or try tomorrow.")
     cr = credits_for(r.mode,r.model,r.res,r.dur)
     # hold credits now (atomic; raises if insufficient)
     try: rpc("spend_credits", t, {"p_amount":cr,"p_item":label_for(r.mode,r.model,r.res,r.dur),"p_kind":r.mode})
     except HTTPException as e:
         raise HTTPException(402, "Not enough credits")
     jid = uuid.uuid4().hex[:12]
-    refs = [p for p in (r.refs or []) if isinstance(p,str) and os.path.exists(os.path.join(ROOT,p))]
-    refs = [os.path.join(ROOT,p) for p in refs]
-    c=jdb(); c.execute("INSERT INTO jobs(id,uid,token,ts,status,credits,kind,label,file,err) VALUES(?,?,?,?,?,?,?,?,?,?)",
-        (jid,uid,t,int(time.time()),"running",cr,r.mode,label_for(r.mode,r.model,r.res,r.dur),None,None)); c.commit(); c.close()
+    refs = safe_refs(uid, r.refs)
+    # NOTE: the caller's JWT is deliberately NOT persisted (see _refund). It stays in memory,
+    # passed to the worker thread only.
+    c=jdb(); c.execute("INSERT INTO jobs(id,uid,token,ts,status,credits,kind,label,file,err,model) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+        (jid,uid,None,int(time.time()),"running",cr,r.mode,label_for(r.mode,r.model,r.res,r.dur),None,None,r.model)); c.commit(); c.close()
     threading.Thread(target=run_job,args=(jid,r.prompt,r.mode,r.model,r.res,r.dur,r.ar,refs,r.template,r.fields,uid,t,r.audio),daemon=True).start()
     return {"job_id":jid,"credits":cr}
 
@@ -283,16 +432,37 @@ async def upload(file: UploadFile = File(...), authorization: str = Header(None)
     """Attach a reference image (for Reference→Video / Talking Head / AI Editor). Returns a server ref path."""
     u = auth_user(bearer(authorization)); uid = u["id"]
     d = os.path.join(UPLOADS, uid); os.makedirs(d, exist_ok=True)
-    ext = os.path.splitext(file.filename or "img.png")[1][:6] or ".png"
+    # SECURITY: the extension was taken from the client and served back by /api/upfile, so a
+    # ".html" upload executed as script on our own origin — where the Supabase session lives.
+    # Only image extensions are accepted now, and the file is re-typed from its magic bytes.
+    ext = os.path.splitext(file.filename or "img.png")[1].lower()
+    if ext not in REF_EXTS: raise HTTPException(400, "only .png/.jpg/.jpeg/.webp uploads are accepted")
+    # MEMORY: this used to be `await file.read()` — the whole body into RAM with no cap, which is a
+    # one-request kill on a 512 MB box. Stream it and stop at the limit.
     name = uuid.uuid4().hex[:10] + ext
-    dst = os.path.join(d, name)
-    with open(dst, "wb") as f: f.write(await file.read())
+    dst = os.path.join(d, name); total = 0
+    with open(dst, "wb") as f:
+        while True:
+            chunk = await file.read(1 << 20)
+            if not chunk: break
+            total += len(chunk)
+            if total > MAX_UPLOAD_BYTES:
+                f.close(); os.remove(dst)
+                raise HTTPException(413, f"file too large (max {MAX_UPLOAD_BYTES//(1<<20)} MB)")
+            f.write(chunk)
+    head = open(dst, "rb").read(12)
+    if not (head[:8] == b"\x89PNG\r\n\x1a\n" or head[:3] == b"\xff\xd8\xff" or head[:4] == b"RIFF"):
+        os.remove(dst); raise HTTPException(400, "not a valid PNG/JPEG/WEBP image")
     return {"ref": os.path.relpath(dst, ROOT), "url": f"/api/upfile/{uid}/{name}", "name": file.filename}
 @app.get("/api/upfile/{uid}/{name}")
 def upfile(uid: str, name: str):
-    p = os.path.join(UPLOADS, uid, os.path.basename(name))
-    if not os.path.exists(p): raise HTTPException(404, "no file")
-    return FileResponse(p)
+    # SECURITY: `uid` came straight off the URL and was joined unchecked, so an encoded ../ walked
+    # out of _uploads. Confine the resolved path to this user's folder and serve a fixed image type.
+    base = os.path.realpath(os.path.join(UPLOADS, os.path.basename(uid)))
+    p = os.path.realpath(os.path.join(base, os.path.basename(name)))
+    if not p.startswith(base + os.sep) or not os.path.isfile(p): raise HTTPException(404, "no file")
+    if os.path.splitext(p)[1].lower() not in REF_EXTS: raise HTTPException(404, "no file")
+    return FileResponse(p, media_type="image/png" if p.endswith(".png") else "image/jpeg")
 
 @app.get("/api/characters")
 def chars(authorization: str = Header(None)):
@@ -412,7 +582,15 @@ def voice(r: VoiceReq, authorization: str = Header(None)):
         else: evid = DEFAULT_ELEVEN_VOICE
         name = uuid.uuid4().hex[:10]+".mp3"; out = os.path.join(VOICES, name)
         _eleven_tts(key, evid, txt, out)
-        return {"file": f"/api/voicefile/{name}", "cloned": (evid!=DEFAULT_ELEVEN_VOICE)}
+        cloned = (evid != DEFAULT_ELEVEN_VOICE)
+        note = None
+        if vid and not cloned:
+            # server/static/library/ was empty, so every "clone" silently fell back to the stock
+            # voice while still charging 15 credits. Say so.
+            note = (f"no voice sample for '{vid}' in server/static/library — used the stock voice"
+                    if not os.path.exists(sample) else
+                    f"cloning unavailable on this plan — used the stock voice")
+        return {"file": f"/api/voicefile/{name}", "cloned": cloned, "note": note}
     except Exception as e:
         try: rpc("refund_credits", t, {"p_amount":15,"p_item":"refund · voice"})
         except Exception: pass

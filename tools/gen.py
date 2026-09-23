@@ -16,7 +16,19 @@ def env():
         for l in open(p):
             if '=' in l and not l.startswith('#'): k,v=l.strip().split('=',1); os.environ.setdefault(k,v)
 def curl_json(url, key_header, data=None, method=None):
-    cmd=['curl','-s','-m','120',url,'-H',key_header,'-H','Content-Type: application/json']
+    # SECURITY: the auth header used to sit in argv, readable via `ps` by any local process.
+    # curl -K reads it from a 0600 file that is removed when this process exits.
+    import tempfile, atexit
+    global _KCFG
+    try: _KCFG
+    except NameError: _KCFG = {}
+    if key_header not in _KCFG:
+        fd, cfg = tempfile.mkstemp(prefix='.gen-', suffix='.conf'); os.close(fd); os.chmod(cfg, 0o600)
+        with open(cfg, 'w') as f:
+            f.write(f'header = "{key_header}"\nheader = "Content-Type: application/json"\n')
+        atexit.register(lambda c=cfg: os.path.exists(c) and os.remove(c))
+        _KCFG[key_header] = cfg
+    cmd=['curl','-s','-m','120',url,'-K',_KCFG[key_header]]
     tmp=None
     if data is not None:
         body=json.dumps(data)
@@ -57,8 +69,19 @@ def fal_run(endpoint, payload, out, key_field='video'):
     subprocess.run(['curl','-s','-L','-m','600','-o',out,url],check=True)
     if not os.path.exists(out) or os.path.getsize(out)==0: raise SystemExit('download failed: '+out)
     return res
+def assert_lane(modality, lane):
+    """Nothing used to check this. capabilities.json still listed disabled vendors as the default,
+    so a call without an explicit --lane routed straight at a banned paid lane."""
+    e = (CAP['lanes'].get(modality) or {}).get(lane)
+    if not isinstance(e, dict):
+        raise SystemExit(f'unknown {modality} lane {lane!r} — see tools/capabilities.json')
+    if e.get('enabled') is False or e.get('disabled') is True or e.get('status') == 'FORBIDDEN':
+        raise SystemExit(f'lane {lane!r} is DISABLED ({e.get("note") or e.get("role") or "see capabilities.json"}). '
+                         f'Live {modality} default is {CAP["lanes"][modality].get("default")!r}.')
+    return e
+
 def video(a):
-    lane=a.lane or CAP['lanes']['video']['default']; prompt=open(a.prompt_file).read().strip(); out=os.path.join(ROOT,a.proj,'renders',f'{a.item}.mp4'); os.makedirs(os.path.dirname(out),exist_ok=True)
+    lane=a.lane or CAP['lanes']['video']['default']; assert_lane('video',lane); prompt=open(a.prompt_file).read().strip(); out=os.path.join(ROOT,a.proj,'renders',f'{a.item}.mp4'); os.makedirs(os.path.dirname(out),exist_ok=True)
     if lane in ('fal_h3','fal_h3_turbo'):
         L=CAP['lanes']['video'][lane]; res=a.resolution or ('768P' if lane=='fal_h3_turbo' else '2K')
         if res not in L['resolutions']: raise SystemExit(f'{lane} supports {L["resolutions"]}, not {res}')
@@ -143,7 +166,15 @@ def music(a):
         time.sleep(10)
 def image(a):
     lane=a.lane or CAP['lanes']['image']['default']
-    if CAP['lanes']['image'].get(lane,{}).get('status')=='FORBIDDEN' or lane.startswith(('fal','pollo')): raise SystemExit(f'lane {lane} is FORBIDDEN for images — images only on higgsfield-unlimited / topview-unlimited MCPs (₹0). fal is video-only.'); prompt=open(a.prompt_file).read().strip(); out=os.path.join(ROOT,a.proj,'renders',f'{a.item}.png'); os.makedirs(os.path.dirname(out),exist_ok=True)
+    # This used to be one line: `if <forbidden>: raise ...; prompt=...; out=...; makedirs(...)`.
+    # Python put ALL of it in the if-body, so on the allowed path prompt/out were never bound and
+    # the next line raised NameError. gen.py image was dead for every lane.
+    if lane.startswith(('fal','pollo')):
+        raise SystemExit(f'lane {lane} is not an image lane here — fal/pollo are video-only.')
+    assert_lane('image', lane)
+    prompt=open(a.prompt_file).read().strip()
+    out=os.path.join(ROOT,a.proj,'renders',f'{a.item}.png')
+    os.makedirs(os.path.dirname(out),exist_ok=True)
     if lane=='higgsfield_web':
         print(json.dumps({'action':'higgsfield_web','url':'https://higgsfield.ai/ai/image?model=seedream_v5_lite','prompt':prompt,'ratio':a.ratio,'steps':['open URL in Chrome extension','replace prompt','set ratio','ensure Unlimited toggle ON','Generate','open tile → Download','stage from Downloads → save as '+out]})); return
     if lane=='fal_nano_banana_pro':

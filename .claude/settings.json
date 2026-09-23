@@ -1,0 +1,30 @@
+{
+  "_comment": [
+    "PreToolUse matcher includes BOTH 'Task' and 'Agent': the sub-agent tool is named Task in",
+    "Claude Code, and the old matcher only listed Agent, so sub-agent dispatch — the loop the",
+    "anti-loop contract most wants caught — was never guarded.",
+    "The hook command uses python3. On the Windows master that binary is often absent, in which",
+    "case the hook silently does not run (RUNBOOK). The guard is defence in depth, not a",
+    "correctness dependency.",
+    "The allowlist covers the commands the RUNBOOK actually documents, including per-project",
+    "helper scripts under projects/*/docs/, which used to prompt on every call."
+  ],
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Write|Edit|Task|Agent|mcp__.*",
+        "hooks": [{ "type": "command", "command": "python3 hooks/anti_loop.py" }]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(python3 tools/*)",
+      "Bash(python tools/*)",
+      "Bash(python3 projects/*/docs/*)",
+      "Bash(python projects/*/docs/*)",
+      "Bash(ffmpeg *)",
+      "Bash(ffprobe *)"
+    ]
+  }
+}

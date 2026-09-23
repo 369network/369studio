@@ -19,7 +19,7 @@ Create Products/Prices in Stripe, then map price_id -> credits + plan in PLANS b
 
 Test:  pip install stripe ; stripe listen --forward-to localhost:8080/api/stripe/webhook
 """
-import os, json, urllib.request
+import os, json, time, urllib.request
 from fastapi import APIRouter, Request, HTTPException, Header
 
 try:
@@ -48,6 +48,28 @@ PLANS = {
 
 router = APIRouter()
 
+# Processed-webhook store, on the same mounted disk as the jobs DB.
+_EVENTS_DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "jobs", "stripe_events.db")
+def _seen(event_id):
+    """True if this Stripe event was already honoured. Insert wins the race; a duplicate raises."""
+    import sqlite3
+    try:
+        c = sqlite3.connect(_EVENTS_DB, timeout=30)
+        c.execute("CREATE TABLE IF NOT EXISTS ev(id TEXT PRIMARY KEY, ts INT)")
+        try:
+            c.execute("INSERT INTO ev(id,ts) VALUES(?,?)", (event_id, int(time.time()))); c.commit()
+            return False
+        except sqlite3.IntegrityError:
+            return True
+        finally:
+            c.close()
+    except Exception:
+        return False        # never drop a real payment because bookkeeping failed
+
+if STRIPE_SECRET and any(p.startswith("price_topup_") or p in ("price_pro","price_studio","price_agency") for p in PLANS):
+    print("[stripe] WARNING: PLANS still holds PLACEHOLDER price ids — every checkout will 400 "
+          "until they are replaced with real Stripe price ids, and they must match pricing.html.", flush=True)
+
 def _add_credits(user_id, amount, item, plan=None):
     body = {"p_user": user_id, "p_amount": amount, "p_item": item, "p_plan": plan}
     req = urllib.request.Request(f"{SUPA_URL}/rest/v1/rpc/add_credits", data=json.dumps(body).encode(), method="POST")
@@ -57,12 +79,17 @@ def _add_credits(user_id, amount, item, plan=None):
         return r.read().decode()
 
 @router.post("/api/stripe/checkout")
-async def checkout(request: Request):
-    """Body: {price_id, user_id, mode:'payment'|'subscription'}. Returns {url} to redirect the buyer."""
+async def checkout(request: Request, authorization: str = Header(None)):
+    """Body: {price_id, mode:'payment'|'subscription'}. Returns {url} to redirect the buyer.
+
+    SECURITY: this used to be unauthenticated and took `user_id` straight from the request body,
+    so anyone could aim a credit grant at any account. The buyer is now whoever is signed in."""
     if not (stripe and STRIPE_SECRET):
         raise HTTPException(501, "Stripe not configured (set STRIPE_SECRET_KEY)")
+    from server.app import auth_user, bearer
+    user_id = auth_user(bearer(authorization))["id"]
     b = await request.json()
-    price_id = b.get("price_id"); user_id = b.get("user_id")
+    price_id = b.get("price_id")
     if price_id not in PLANS: raise HTTPException(400, "unknown price")
     mode = b.get("mode", "payment")
     sess = stripe.checkout.Session.create(
@@ -80,15 +107,24 @@ async def webhook(request: Request, stripe_signature: str = Header(None)):
         event = stripe.Webhook.construct_event(payload, stripe_signature, WEBHOOK_SECRET)
     except Exception as e:
         raise HTTPException(400, f"bad signature: {e}")
+    # IDEMPOTENCY: Stripe retries a webhook on any non-2xx, including our own 500s, and each retry
+    # used to grant credits again. Record every event id we have honoured and ignore repeats.
+    if _seen(event["id"]):
+        return {"ok": True, "duplicate": True}
+
     t = event["type"]
     if t == "checkout.session.completed":
         s = event["data"]["object"]; uid = s.get("client_reference_id") or (s.get("metadata") or {}).get("user_id")
         price = (s.get("metadata") or {}).get("price_id"); plan = PLANS.get(price, {})
+        # A NEW subscription fires BOTH checkout.session.completed and invoice.paid for its first
+        # period, which double-credited month one. Subscriptions are granted by invoice.paid only.
+        if s.get("mode") == "subscription":
+            return {"ok": True, "skipped": "subscription credited on invoice.paid"}
         if uid and plan: _add_credits(uid, plan["credits"], f"Stripe {price}", plan.get("plan"))
-    elif t == "invoice.paid":  # recurring subscription renewal
+    elif t == "invoice.paid":  # subscription: first period and every renewal
         inv = event["data"]["object"]
         price = (((inv.get("lines") or {}).get("data") or [{}])[0].get("price") or {}).get("id")
         uid = inv.get("subscription_details", {}).get("metadata", {}).get("user_id") or inv.get("metadata", {}).get("user_id")
         plan = PLANS.get(price, {})
-        if uid and plan: _add_credits(uid, plan["credits"], f"Stripe renewal {price}", plan.get("plan"))
+        if uid and plan: _add_credits(uid, plan["credits"], f"Stripe {price}", plan.get("plan"))
     return {"ok": True}
