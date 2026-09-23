@@ -17,10 +17,25 @@ def probe(v):
     j = json.loads(subprocess.check_output(['ffprobe','-v','error','-show_entries','stream=width,height,codec_type:format=duration','-of','json',v]))
     vs = next(s for s in j['streams'] if s['codec_type']=='video'); return int(vs['width']), int(vs['height']), float(j['format']['duration'])
 LOUD = 'loudnorm=I=-16:TP=-1.5:LRA=11'
+def _verify(paths):
+    """Every input must actually decode. hisaab-ep04 concat: one intermediate was written by a
+    run that hit a timeout -- over any size floor, no moov atom. ffmpeg logged 'Impossible to
+    open', dropped it, and STILL EXITED 0, so the cut was silently short. Same class as the
+    santan s21 download. Check before concatenating, not after."""
+    bad = []
+    for f in paths:
+        r = subprocess.run(['ffprobe','-v','error','-show_entries','format=duration',
+                            '-of','csv=p=0',f], capture_output=True, text=True)
+        try: ok = r.returncode == 0 and float(r.stdout.strip() or 0) > 0.1
+        except ValueError: ok = False
+        if not ok: bad.append(f)
+    if bad:
+        sys.exit('will not concat, these do not decode:\n  ' + '\n  '.join(bad))
 def _same_streams(paths):
     sig=lambda f: subprocess.check_output(['ffprobe','-v','error','-select_streams','v','-show_entries','stream=codec_name,pix_fmt,r_frame_rate,time_base,width,height','-of','csv=p=0',f])
     return len({sig(f) for f in paths})==1
 def concat(a):
+    _verify(a.inputs)
     if not _same_streams(a.inputs):
         n=len(a.inputs); fc=''.join(f'[{i}:v][{i}:a]' for i in range(n))+f'concat=n={n}:v=1:a=1[v][a]'
         cmd=['ffmpeg','-v','error','-y']+sum([['-i',f] for f in a.inputs],[])+['-filter_complex',fc,'-map','[v]','-map','[a]','-c:v','libx264','-crf','16','-preset','fast','-c:a','aac','-b:a','192k','-movflags','+faststart',a.out]; run(cmd); return
