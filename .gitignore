@@ -21,7 +21,7 @@ renders.db-shm
 flow_kf_results.json
 
 # server/static/library/ (75 faces + 74 voice samples) has been tracked since before the 23 Sep
-# audit, so the blanket *.mp3 rule above never removed it -- .gitignore does not affect files
+# audit, so the blanket *.mp3 rule above never removed it — .gitignore does not affect files
 # already in the index. This exception exists so a NEW voice sample added to that folder is not
 # silently skipped.
 !server/static/library/*.mp3

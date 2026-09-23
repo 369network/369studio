@@ -56,16 +56,27 @@ def _litter(p):
         if r.startswith('http'): return r
         time.sleep(5*(attempt+1))
     return ''
+# Upload hosts EXPIRE: uguu deletes after ~3 h, litterbox after the requested window (we ask 72 h).
+# The cache had no timestamp, so a URL from an earlier session was reused long after the file was
+# gone and ByteDance answered 422 "Failed to download media" — which reads like a host problem but
+# is really a stale-cache problem. Entries now carry an upload time and are re-uploaded when old.
+TTL = {"uguu": 2*3600, "litterbox": 60*3600}
 def host(rel):
     p=os.path.join(proj,rel); k=f"{rel}:{int(os.path.getmtime(p))}:{HOSTPREF}"
-    if k in U: return U[k]
+    e=U.get(k)
+    if isinstance(e,dict) and e.get("url") and time.time()-e.get("ts",0) < TTL.get(HOSTPREF,2*3600):
+        return e["url"]
+    if isinstance(e,str):
+        print(f'  re-uploading {rel}: cached URL has no timestamp, assuming expired',flush=True)
+    elif isinstance(e,dict):
+        print(f'  re-uploading {rel}: cached URL is {int((time.time()-e.get("ts",0))/60)} min old',flush=True)
     order=[_uguu,_litter] if HOSTPREF=='uguu' else [_litter,_uguu]
     r=''
     for fn in order:
         r=fn(p)
         if r.startswith('http'): break
     if not r.startswith('http'): raise SystemExit(f'upload failed {rel}: {r[:120]}')
-    U[k]=r; json.dump(U,open(up,'w'),indent=1); return r
+    U[k]={"url":r,"ts":int(time.time())}; json.dump(U,open(up,'w'),indent=1); return r
 # SECURITY: the key used to be passed as `-H "x-api-key: ..."` in argv, readable by any local
 # process via `ps` / /proc/<pid>/cmdline for the life of the call. curl -K reads it from a
 # 0600 file instead, so it never appears on a command line.
@@ -90,7 +101,7 @@ if DRY:
     sys.exit(0)
 for m in M:
     sid=m['id']; out=f"{proj}/renders/cr_{sid.replace('-','_')}.mp4"
-    if os.path.exists(out) and os.path.getsize(out)>MIN_OK: continue
+    if os.path.exists(out) and os.path.getsize(out)>MIN_OK: continue   # note: qc_sheet.py re-checks playability
     if sid in S and S[sid].get('tid'): continue
     prompt=open(f"{proj}/{m['prompt']}",encoding='utf-8').read()
     dur=max(4,min(15,int(m['dur']))); ar=m.get('ar','9:16'); res=m.get('res',RES)
@@ -121,12 +132,23 @@ while pending and time.time()-t0<3600:
                 print('FAIL',sid,'success status but no media_urls',flush=True)
                 led(sid,status='failed',error='success with no media_urls'); pending.discard(sid); continue
             # The CDN intermittently stalls; a partial file used to be recorded as a finished clip.
+            # Size alone is not enough: santan s21 arrived at 2.6 MB with no moov atom — well over
+            # the floor, completely unplayable. Verify it actually decodes when ffprobe is around.
+            def playable(f):
+                if not (os.path.exists(f) and os.path.getsize(f)>MIN_OK): return False
+                try:
+                    pr=subprocess.run(['ffprobe','-v','error','-show_entries','format=duration',
+                                       '-of','csv=p=0',f],capture_output=True,text=True,timeout=60)
+                    return pr.returncode==0 and float(pr.stdout.strip() or 0)>1
+                except FileNotFoundError: return True     # no ffprobe here — size check stands
+                except Exception: return False
             ok=False
             for attempt in range(3):
                 r=subprocess.run(['curl','-s','-m','300','-L','-o',out,mu0])
-                if r.returncode==0 and os.path.exists(out) and os.path.getsize(out)>MIN_OK: ok=True; break
+                if r.returncode==0 and playable(out): ok=True; break
                 print(f'retry download {sid} ({attempt+1}/3) rc={r.returncode} '
-                      f'size={os.path.getsize(out) if os.path.exists(out) else 0}',flush=True); time.sleep(5)
+                      f'size={os.path.getsize(out) if os.path.exists(out) else 0} (unplayable or short)',
+                      flush=True); time.sleep(5)
             # save last frame Crun returned (return_last_frame) -> cr_<id>_last.png for next-clip continuity.
             # Crun appends the last frame as an extra image entry in media_urls (e.g. ..._1.png).
             res_d=d.get('result') or {}; mu=res_d.get('media_urls') or []; lf=None
