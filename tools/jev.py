@@ -22,8 +22,11 @@ questions.json is the API's own shape — an OBJECT keyed by your question ids:
     "retake": {"type":"noul","instructions":"Should we spend credits on a retake?"}
   }
 
-Key: JEV_API_KEY, from the env or ~/.config/keys_jev.env. Never printed, never in argv
-(passed through a 0600 `curl -K` config that is deleted on exit).
+Two routes, same model and same wire format — whichever key is present is used, OpenRouter first:
+  OPENROUTER_API_KEY in ~/.config/keys_openrouter.env  -> openrouter.ai/api/v1/systemone
+  JEV_API_KEY        in ~/.config/keys_jev.env         -> api.typesafe.ai/v1/systemone
+Force one with --via. Keys are never printed and never in argv (0600 `curl -K` config, deleted
+on exit). A jevai.org key is not valid on either route.
 
 Cost: $0.042 per 1M input tokens, output free. Limits: 255 choice options, 2-10 score levels,
 250k tokens/sec and 1,200 requests/MINUTE. Batch many questions into ONE call — TypeSafe's own
@@ -32,23 +35,46 @@ cookbook measures 13 batched questions as 12.2x cheaper and 10x faster than 13 c
 import os, sys, json, time, argparse, subprocess, tempfile, atexit
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-API = "https://api.typesafe.ai/v1/systemone"
-USD_PER_INPUT_TOKEN = 0.042 / 1_000_000          # output is free
+# Two routes to the same model and the same native {state, model, questions} wire format.
+#   typesafe   -> api.typesafe.ai, JEV_API_KEY        (direct, $0.042/M input, output free)
+#   openrouter -> openrouter.ai,   OPENROUTER_API_KEY (same price + 5.5% top-up fee;
+#                                                      also returns a real usage.cost per call)
+ROUTES = {
+    "typesafe":   {"url": "https://api.typesafe.ai/v1/systemone",
+                   "env": "JEV_API_KEY",        "file": "keys_jev.env",        "prefix": ""},
+    "openrouter": {"url": "https://openrouter.ai/api/v1/systemone",
+                   "env": "OPENROUTER_API_KEY", "file": "keys_openrouter.env", "prefix": "sk-or-"},
+}
+USD_PER_INPUT_TOKEN = 0.042 / 1_000_000          # output is free; OpenRouter reports its own cost
 LOG = os.path.join(ROOT, "renders", "jev_log.jsonl")
 
-def load_key():
-    k = os.environ.get("JEV_API_KEY")
-    for p in (os.path.expanduser("~/.config/keys_jev.env"), os.path.join(ROOT, ".config", "keys_jev.env")):
+def _read(route):
+    r = ROUTES[route]
+    k = os.environ.get(r["env"])
+    for p in (os.path.expanduser("~/.config/" + r["file"]), os.path.join(ROOT, ".config", r["file"])):
         if not k and os.path.exists(p):
             for line in open(p):
-                if line.startswith("JEV_API_KEY="):
+                if line.startswith(r["env"] + "="):
                     k = line.strip().split("=", 1)[1].strip().strip('"')
-    if not k:
-        sys.exit("JEV_API_KEY missing.\n"
-                 "  Get an official key at https://console.typesafe.ai (open signup, no waitlist)\n"
-                 "  then:  printf 'JEV_API_KEY=...\\n' > ~/.config/keys_jev.env && chmod 600 ~/.config/keys_jev.env\n"
-                 "  Do NOT use a jevai.org key — that is an unofficial proxy and 401s here.")
     return k
+
+def resolve(prefer=None):
+    """Pick a route. OpenRouter wins when both are present — it reports a real per-call cost."""
+    if prefer:
+        k = _read(prefer)
+        if not k: sys.exit(f"{ROUTES[prefer]['env']} missing for --via {prefer}.\n" + _howto())
+        return prefer, k
+    for route in ("openrouter", "typesafe"):
+        k = _read(route)
+        if k: return route, k
+    sys.exit("No Jev key found.\n" + _howto())
+
+def _howto():
+    return ("  Either route works — same model, same request shape:\n"
+            "    OpenRouter:  printf 'OPENROUTER_API_KEY=sk-or-v1-...\\n' > ~/.config/keys_openrouter.env\n"
+            "    TypeSafe:    printf 'JEV_API_KEY=...\\n'                > ~/.config/keys_jev.env\n"
+            "  then chmod 600 that file. OpenRouter keys start sk-or-v1-; get one at openrouter.ai/keys.\n"
+            "  A jevai.org key is NOT valid on either route.")
 
 _CFG = None
 def hdr_cfg(key):
@@ -62,8 +88,9 @@ def hdr_cfg(key):
         atexit.register(lambda: os.path.exists(_CFG) and os.remove(_CFG))
     return _CFG
 
-def call(state, questions, model="jev-latest", tries=4):
-    key = load_key()
+def call(state, questions, model="jev-latest", tries=4, via=None):
+    route, key = resolve(via)
+    url = ROUTES[route]["url"]
     body = {"state": state, "model": model, "questions": questions}
     bf = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8")
     json.dump(body, bf, ensure_ascii=False); bf.close()
@@ -71,7 +98,7 @@ def call(state, questions, model="jev-latest", tries=4):
     delay = 1.5
     for attempt in range(tries):
         r = subprocess.run(["curl", "-s", "-m", "120", "-w", "\n%{http_code}",
-                            "-K", hdr_cfg(key), "-X", "POST", "--data-binary", f"@{bf.name}", API],
+                            "-K", hdr_cfg(key), "-X", "POST", "--data-binary", f"@{bf.name}", url],
                            capture_output=True, text=True)
         raw = r.stdout or ""
         code = raw.rsplit("\n", 1)[-1].strip()
@@ -79,22 +106,26 @@ def call(state, questions, model="jev-latest", tries=4):
         if code == "200":
             try: d = json.loads(payload)
             except Exception: sys.exit(f"200 but unparseable body: {payload[:300]}")
-            _log(d, questions)
+            d["_route"] = route
+            _log(d, questions, route)
             return d
         if code in ("429", "529") and attempt < tries - 1:     # documented: exponential backoff
             print(f"jev {code}, retrying in {delay:.1f}s ({attempt+1}/{tries})", file=sys.stderr)
             time.sleep(delay); delay *= 2; continue
-        hint = {"401": "invalid key — get an official one at console.typesafe.ai; a jevai.org key will not work",
+        hint = {"401": f"invalid {ROUTES[route]['env']} on the {route} route — a jevai.org key is not valid anywhere",
                 "422": "malformed body — questions must be an OBJECT keyed by id; choice criteria is a map, score criteria is a list of 2-10 levels",
                 "429": "rate limited (limit is 1,200 requests/MINUTE — you are probably looping)",
                 "529": "TypeSafe overloaded"}.get(code, "")
-        sys.exit(f"jev HTTP {code}{': ' + hint if hint else ''}\n{payload[:400]}")
+        sys.exit(f"jev HTTP {code} via {route}{': ' + hint if hint else ''}\n{payload[:400]}")
 
-def _log(d, questions):
+def _log(d, questions, route):
     u = d.get("usage") or {}
-    rec = {"ts": int(time.time()), "questions": len(questions),
+    # OpenRouter returns the real charge; on the direct route we compute it.
+    usd = u.get("cost")
+    if usd is None: usd = (u.get("input_tokens") or 0) * USD_PER_INPUT_TOKEN
+    rec = {"ts": int(time.time()), "route": route, "questions": len(questions),
            "input_tokens": u.get("input_tokens"), "output_tokens": u.get("output_tokens"),
-           "usd": round((u.get("input_tokens") or 0) * USD_PER_INPUT_TOKEN, 8)}
+           "usd": round(float(usd), 8)}
     try:
         os.makedirs(os.path.dirname(LOG), exist_ok=True)
         with open(LOG, "a") as f: f.write(json.dumps(rec) + "\n")
@@ -118,15 +149,17 @@ def fmt(d):
         else:
             out.append(f"{qid:20} noul    {a.get('noul'):.3f}")
     u = d.get("usage") or {}
-    out.append(f"\n{u.get('input_tokens', 0)} input tokens = "
-               f"${(u.get('input_tokens') or 0) * USD_PER_INPUT_TOKEN:.6f}  (output free)")
+    usd = u.get("cost")
+    if usd is None: usd = (u.get("input_tokens") or 0) * USD_PER_INPUT_TOKEN
+    out.append(f"\n{u.get('input_tokens', 0)} input tokens = ${float(usd):.6f}  (output free)"
+               f"   via {d.get('_route')}")
     return "\n".join(out)
 
 def cmd_ping(a):
     q = {"reachable": {"type": "noul", "instructions": "Is this sentence in English?"}}
-    d = call("The quick brown fox jumps over the lazy dog.", q, a.model)
-    print("jev OK —", json.dumps(d.get("answers"), separators=(",", ":")))
-    print(f"model: {d.get('model')}   usage: {d.get('usage')}")
+    d = call("The quick brown fox jumps over the lazy dog.", q, a.model, via=a.via)
+    print(f"jev OK via {d.get('_route')} —", json.dumps(d.get("answers"), separators=(",", ":")))
+    print(f"model: {d.get('model')}   provider: {d.get('provider','-')}   usage: {d.get('usage')}")
 
 def cmd_ask(a):
     state = a.state if a.state else open(a.state_file, encoding="utf-8").read()
@@ -143,28 +176,35 @@ def cmd_ask(a):
                 sys.exit(f"{qid}: score criteria must be a list of 2-10 levels")
         if t == "choice" and len(q.get("criteria") or {}) > 255:
             sys.exit(f"{qid}: choice allows at most 255 options")
-    d = call(state, questions, a.model)
+    d = call(state, questions, a.model, via=a.via)
     print(json.dumps(d, indent=1, ensure_ascii=False) if a.json else fmt(d))
 
 def cmd_cost(a):
     if not os.path.exists(LOG): print("no jev calls logged yet"); return
-    n = tok = 0; usd = 0.0
+    n = tok = 0; usd = 0.0; by = {}
     for line in open(LOG):
         try: r = json.loads(line)
         except Exception: continue
         n += 1; tok += r.get("input_tokens") or 0; usd += r.get("usd") or 0
+        by[r.get("route", "?")] = by.get(r.get("route", "?"), 0) + 1
     print(f"{n} calls · {tok:,} input tokens · ${usd:.4f} total (output free)")
+    if by: print("  by route: " + ", ".join(f"{k}={v}" for k, v in sorted(by.items())))
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--model", default="jev-latest")
+    ap.add_argument("--model")
+    ap.add_argument("--via", choices=sorted(ROUTES), help="force a route; default prefers openrouter")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("ping").set_defaults(f=cmd_ping)
-    p = sub.add_parser("ask")
+    def via_opt(x): x.add_argument("--via", choices=sorted(ROUTES), dest="via2",
+                                   help="force a route; default prefers openrouter")
+    pp = sub.add_parser("ping"); via_opt(pp); pp.add_argument("--model"); pp.set_defaults(f=cmd_ping)
+    p = sub.add_parser("ask"); via_opt(p); p.add_argument("--model")
     p.add_argument("--state"); p.add_argument("--state-file"); p.add_argument("--questions", required=True)
     p.add_argument("--json", action="store_true"); p.set_defaults(f=cmd_ask)
     sub.add_parser("cost").set_defaults(f=cmd_cost)
     a = ap.parse_args()
+    a.via = getattr(a, "via2", None) or a.via          # accept --via on either side of the subcommand
+    if getattr(a, "model", None) is None: a.model = "jev-latest"
     if a.cmd == "ask" and not (a.state or a.state_file): ap.error("need --state or --state-file")
     a.f(a)
 

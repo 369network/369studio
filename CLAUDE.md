@@ -143,9 +143,10 @@ work on the real API and its own quota dies after ~5 calls. Official surfaces: d
 OpenRouter (identical $0.042/M, full Decisions API, 5.5% top-up fee) as fallback.
 **Still do the ledger first** (clip id → task id → URL → status → last-frame path in JSONL/SQLite) — it needs no
 Jev at all. Full evaluation: project doc `claude/jev-typesafe-evaluation.md`.
-**Wired 23 Sep 2026:** `tools/jev.py` + the `jev` skill (`.claude/skills/jev`), with three
-ready packs — `prompt-preflight` (the PROMPT-STANDARD checklist as 8 typed checks, ~$0.00005
-a shot), `qc-triage`, `moderation-451`. The client is verified against the official API: it
-validates question shapes locally and returns a clean diagnosed error. **It needs an official
-key from console.typesafe.ai** in `~/.config/keys_jev.env`; the jevai.org key still on disk
-401s and must be discarded.
+**Wired 23 Sep 2026:** `tools/jev.py` + the `jev` skill (`.claude/skills/jev`), with three ready
+packs — `prompt-preflight` (the PROMPT-STANDARD checklist as 8 typed checks, ~$0.00005 a shot),
+`qc-triage`, `moderation-451`. The client validates question shapes locally before spending a
+call and returns a diagnosed error. **Two routes, same model and wire format** — `OPENROUTER_API_KEY`
+in `~/.config/keys_openrouter.env` (preferred; returns a real per-call cost) or `JEV_API_KEY` in
+`~/.config/keys_jev.env`; `--via` forces one. The jevai.org key still on disk 401s on both and
+must be discarded.

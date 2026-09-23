@@ -93,16 +93,29 @@ Realistic monthly spend for this studio: **$1–5**.
 
 250k tokens/sec, 1,200 requests/minute. No SLA. Prepaid credits expire after 12 months.
 
-## Key
+## Key — either route works
 
-`JEV_API_KEY` in `~/.config/keys_jev.env` (chmod 600). Never printed, never in argv — the runner
-passes it through a 0600 `curl -K` config it deletes on exit.
+Same model, same request shape, two front doors. `tools/jev.py` uses whichever key it finds and
+prefers OpenRouter (it returns a real per-call `usage.cost`). Force one with `--via`.
 
-Get one at **console.typesafe.ai** — open self-serve signup since 20 Sep 2026, no waitlist.
-**Never use a jevai.org key.** That is an unofficial proxy on an anonymously registered domain;
-its key 401s against the real API and its own quota dies after about five calls. Official
-surfaces only: `api.typesafe.ai`, `docs.typesafe.ai`, or OpenRouter as a fallback (same $0.042/M,
-5.5% top-up fee).
+| Route | Key | File | Endpoint |
+|---|---|---|---|
+| OpenRouter | `OPENROUTER_API_KEY` (`sk-or-v1-…`) | `~/.config/keys_openrouter.env` | `openrouter.ai/api/v1/systemone` |
+| TypeSafe direct | `JEV_API_KEY` | `~/.config/keys_jev.env` | `api.typesafe.ai/v1/systemone` |
+
+```bash
+printf 'OPENROUTER_API_KEY=sk-or-v1-...\n' > ~/.config/keys_openrouter.env && chmod 600 ~/.config/keys_openrouter.env
+```
+
+Keys are never printed and never in argv — a 0600 `curl -K` config, deleted on exit.
+
+Verified, not assumed: `POST openrouter.ai/api/v1/systemone` answers `401` exactly as the known
+route `/api/v1/chat/completions` does, while a made-up path answers `404` — so the Decisions route
+is real. Jev does **not** appear in `GET /api/v1/models`; that catalogue lists chat-completions
+models and Jev is not one, so its absence is expected and not a problem.
+
+**Never use a jevai.org key** — unofficial proxy, anonymously registered domain, 401s on both
+routes and its own quota dies after about five calls.
 
 Full evaluation, including why the first version of our notes was wrong about the rate limit:
 project doc `claude/jev-typesafe-evaluation.md`.

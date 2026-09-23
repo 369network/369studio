@@ -163,8 +163,18 @@ of `tools/`, it does not sit there looking runnable.
 
 ## §T — Jev lane (typed text decisions), wired 23 Sep 2026
 
-`tools/jev.py` + `.claude/skills/jev`. `POST https://api.typesafe.ai/v1/systemone`,
-`Authorization: Bearer <JEV_API_KEY>`, model `jev-latest`.
+`tools/jev.py` + `.claude/skills/jev`. Two routes, identical model and wire format; the runner
+prefers OpenRouter because it returns a real per-call `usage.cost`. `--via` forces one.
+
+| Route | Endpoint | Key | File |
+|---|---|---|---|
+| openrouter | `POST https://openrouter.ai/api/v1/systemone` | `OPENROUTER_API_KEY` | `~/.config/keys_openrouter.env` |
+| typesafe | `POST https://api.typesafe.ai/v1/systemone` | `JEV_API_KEY` | `~/.config/keys_jev.env` |
+
+Model `jev-latest` (or a pin like `jev-1.13`). **The OpenRouter route was verified, not assumed:**
+that path answers `401` exactly as the known-good `/api/v1/chat/completions` does, while an
+invented path answers `404`. Jev is absent from `GET /api/v1/models` — that catalogue lists
+chat-completions models and Jev is a Decisions model, so its absence is expected.
 
 **Request shape** (confirmed against docs.typesafe.ai, not guessed — the four 400s we ate in the
 first evaluation came from guessing): `{state, model, questions}` where `questions` is an
