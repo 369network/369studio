@@ -1,3 +1,50 @@
+## v7.9 — 23 Sep 2026 — one pre-spend gate, Jev wired into it, santan delivered
+
+**The gate (new hard rule 7).** `tools/preflight.py <proj> <manifest> [ids]` is now the only thing
+to remember before a render batch. It runs three checks and exits 0 (spend) or 1 (fix first):
+`run_crun.py --dry-run` that every prompt file and ref resolves · `ledger.py chain` that the last
+frame this clip chains from actually exists · the Jev `prompt-preflight` pack, the PROMPT-STANDARD
+checklist as 8 typed checks scored per shot. Thresholds are the measured santan s6–s26
+distribution, not taste: `moderation_risk > 0.70` blocks, everything else warns. Pipeline step 5 is
+now gate-then-clips.
+
+**Jev is live (`tools/jev.py`, `.claude/skills/jev`).** Typed text decisions — choice / score /
+noul — for the judgements the system used to make in prose. Two routes, same model and wire
+format: `OPENROUTER_API_KEY` (preferred, returns a real per-call cost) or `JEV_API_KEY`; `--via`
+forces one. Question shapes are validated locally so a malformed pack fails before spending a
+call. Three packs ship: `prompt-preflight`, `qc-triage`, `moderation-451`. About $0.00005 a shot.
+`capabilities.json` gains a `decisions` lane, `jev_openrouter` primary with `jev_typesafe` as
+fallback. Text only — never anything visual; frame QC stays with the `qc` agent.
+
+**The rule is "Jev flags, you verify."** Its confidence number is the signal to go and read the
+thing yourself, and on the santan run that caught one bug in our own pack (an audio ladder written
+for dialogue, misfiring on a narrator VO — s6 2.44 at conf 0.44, correct after the rewrite at
+2.90/0.90) and one real moderation risk (s10 at 0.95 against 0.02–0.39 everywhere else: a hand
+flicking out and a flinch read as a strike; re-registered modestly with the beat kept, 0.95 → 0.60,
+and it rendered with no 451).
+
+**Two runner fixes the santan run forced (`run_crun.py`).**
+- **Upload URLs expire; the cache did not know that.** uguu deletes after ~3 h, and a cached URL
+  from an earlier session was handed to ByteDance long after the file was gone — a `422 "Failed to
+  download media"` that reads like a host problem and is really a stale-cache problem. Entries now
+  carry an upload time and are re-uploaded past a per-host TTL (uguu 2 h, litterbox 60 h).
+- **Size is not proof a download decoded.** s21 arrived at 2.2 MB with no moov atom, cleared the
+  400 KB floor, was recorded as success, and silently broke the chain by producing no last frame.
+  Downloads are now checked with `ffprobe` for a decodable duration > 1 s; where ffprobe is absent
+  the size check still stands. Deleting the bad file and re-running cost nothing — the task id was
+  still in `crun_state.json`.
+
+**santan delivered.** 26/26 clips, 26/26 QC-clean, chain s1→s26 intact, every last frame present.
+`final/santan_v2_1080p.mp4`, 4:22, 25 fps, loudnorm I=−16, plus 720p and 540p. 2,294.2 credits ≈
+$11.18. Backed up to the PC master and verified byte-exact — the first extraction truncated at
+133 MB of 194 MB and only the size check caught it.
+
+**Correction to the v7.8 library note, third and final time.** The cloud working copy's
+`library.json` was still the placeholder I wrote — all 75 entries missing `_wav` and with the
+`fantasy` categories flattened to `human`. Restored from the repo, along with all 149 library
+binaries. The repo and production were always correct; the cloud mirror is now byte-complete
+against every tracked file.
+
 ## v7.8 — 23 Sep 2026 — system audit: every remaining problem closed
 
 Follows the four-part audit (project doc `claude/system-audit-2026-09-23.md`). Steps 1 and 2 were
