@@ -25,36 +25,46 @@ def curl(a):
     r=subprocess.run(['curl','-s','-m','180','-L']+a,capture_output=True,text=True)
     try: return json.loads(r.stdout)
     except Exception: return {'error':(r.stdout or r.stderr)[:300]}
-def host(rel):
-    p=os.path.join(proj,rel); k=f"{rel}:{int(os.path.getmtime(p))}"
-    if k in U: return U[k]
+HOSTPREF=os.environ.get('CRUN_HOST','litterbox').lower()  # set CRUN_HOST=uguu when ByteDance can't fetch litterbox
+def _uguu(p):
+    j=subprocess.run(['curl','-s','-m','180','-F',f'files[]=@{p}','https://uguu.se/upload'],capture_output=True,text=True).stdout
+    try: return json.loads(j)['files'][0]['url']
+    except Exception: return ''
+def _litter(p):
     for attempt in range(2):
         r=subprocess.run(['curl','-s','-m','180','-F','reqtype=fileupload','-F','time=72h','-F',f'fileToUpload=@{p}','https://litterbox.catbox.moe/resources/internals/api.php'],capture_output=True,text=True).stdout.strip()
-        if r.startswith('http'): break
+        if r.startswith('http'): return r
         time.sleep(5*(attempt+1))
-    if not r.startswith('http'):  # fallback: uguu.se (3 h, direct link)
-        j=subprocess.run(['curl','-s','-m','180','-F',f'files[]=@{p}','https://uguu.se/upload'],capture_output=True,text=True).stdout
-        try: r=json.loads(j)['files'][0]['url']; k=k+':uguu'
-        except Exception: raise SystemExit(f'upload failed {rel}: {r[:120]}')
+    return ''
+def host(rel):
+    p=os.path.join(proj,rel); k=f"{rel}:{int(os.path.getmtime(p))}:{HOSTPREF}"
+    if k in U: return U[k]
+    order=[_uguu,_litter] if HOSTPREF=='uguu' else [_litter,_uguu]
+    r=''
+    for fn in order:
+        r=fn(p)
+        if r.startswith('http'): break
+    if not r.startswith('http'): raise SystemExit(f'upload failed {rel}: {r[:120]}')
     U[k]=r; json.dump(U,open(up,'w'),indent=1); return r
 H=['-H',f'x-api-key: {key}','-H','Content-Type: application/json']
 for m in M:
     sid=m['id']; out=f"{proj}/renders/cr_{sid.replace('-','_')}.mp4"
-    if os.path.exists(out) and os.path.getsize(out)>0: continue
+    if os.path.exists(out) and os.path.getsize(out)>100_000: continue
     if sid in S and S[sid].get('tid'): continue
     prompt=open(f"{proj}/{m['prompt']}",encoding='utf-8').read()
     dur=max(4,min(15,int(m['dur']))); ar=m.get('ar','9:16'); res=m.get('res',RES)
+    RLF=m.get('return_last_frame',True)  # always ask Crun for the last frame (continuity) unless explicitly off
     if m.get('mode')=='A':
         imgs=[host(m['first'])]+([host(m['last'])] if m.get('last') else [])
-        body={'model':'bytedance/seedance2-0-fast-i2v','input':{'prompt':prompt,'img_urls':imgs,'resolution':res,'aspect_ratio':ar,'duration':dur,'audio':m.get('audio',True)}}
+        body={'model':'bytedance/seedance2-0-fast-i2v','input':{'prompt':prompt,'img_urls':imgs,'resolution':res,'aspect_ratio':ar,'duration':dur,'audio':m.get('audio',True),'return_last_frame':RLF}}
     elif m.get('mode')=='T':  # text-to-video (no refs) — 369 Studio Creator lane
-        body={'model':'bytedance/seedance2-0-fast-t2v','input':{'prompt':prompt,'resolution':res,'aspect_ratio':ar,'duration':dur,'audio':m.get('audio',True)}}
+        body={'model':'bytedance/seedance2-0-fast-t2v','input':{'prompt':prompt,'resolution':res,'aspect_ratio':ar,'duration':dur,'audio':m.get('audio',True),'return_last_frame':RLF}}
     else:
-        body={'model':'bytedance/seedance2-0-fast-r2v','input':{'prompt':prompt,'reference_images':[host(r) for r in m['refs'][:9]],'resolution':res,'aspect_ratio':ar,'duration':dur,'audio':m.get('audio',True)}}
+        body={'model':'bytedance/seedance2-0-fast-r2v','input':{'prompt':prompt,'reference_images':[host(r) for r in m['refs'][:9]],'resolution':res,'aspect_ratio':ar,'duration':dur,'audio':m.get('audio',True),'return_last_frame':RLF}}
     j=curl(H+['-X','POST','-d',json.dumps(body,ensure_ascii=False),f'{API}/CreateTask'])
     tid=(j.get('data') or {}).get('task_id'); S[sid]={'tid':tid,'submit':j}; json.dump(S,open(sp,'w'),indent=1)
     print('submit',sid,tid or j,flush=True); time.sleep(1)
-pending={sid for sid in S if S[sid].get('tid') and not os.path.exists(f"{proj}/renders/cr_{sid.replace('-','_')}.mp4")}
+pending={sid for sid in S if S[sid].get('tid') and not (os.path.exists(f"{proj}/renders/cr_{sid.replace('-','_')}.mp4") and os.path.getsize(f"{proj}/renders/cr_{sid.replace('-','_')}.mp4")>100_000)}
 t0=time.time()
 while pending and time.time()-t0<3600:
     for sid in sorted(pending):
@@ -62,6 +72,18 @@ while pending and time.time()-t0<3600:
         if st=='success':
             out=f"{proj}/renders/cr_{sid.replace('-','_')}.mp4"
             subprocess.run(['curl','-s','-m','300','-L','-o',out,d['result']['media_urls'][0]]); json.dump(d,open(out+'.json','w'),indent=1)
+            # save last frame Crun returned (return_last_frame) -> cr_<id>_last.png for next-clip continuity.
+            # Crun appends the last frame as an extra image entry in media_urls (e.g. ..._1.png).
+            res_d=d.get('result') or {}; mu=res_d.get('media_urls') or []; lf=None
+            for u in mu[1:]:
+                if isinstance(u,str) and u.lower().split('?')[0].endswith(('.png','.jpg','.jpeg','.webp')): lf=u; break
+            if not lf:  # fallback: any last-frame-named field
+                for k,v in res_d.items():
+                    if 'last' in k.lower() and 'frame' in k.lower():
+                        lf=v[0] if isinstance(v,list) and v else v; break
+            if lf and str(lf).startswith('http'):
+                lfp=f"{proj}/renders/cr_{sid.replace('-','_')}_last.png"
+                subprocess.run(['curl','-s','-m','120','-L','-o',lfp,lf]); print('lastframe',sid,os.path.getsize(lfp) if os.path.exists(lfp) else 0,flush=True)
             print('done',sid,os.path.getsize(out),d.get('credits'),'cr',flush=True); pending.discard(sid)
         elif st=='failed':
             print('FAIL',sid,d,flush=True); S[sid]['error']=d; json.dump(S,open(sp,'w'),indent=1); pending.discard(sid)
