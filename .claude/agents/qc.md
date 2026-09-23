@@ -42,6 +42,30 @@ Authorities: `knowledge/PROMPT-STANDARD.md` (prompt law), `knowledge/RUNBOOK.md`
 
 ## 2. PRE-SPEND gate — run BEFORE anything is generated
 
+**One command runs this whole gate:**
+
+```bash
+python3 tools/preflight.py <proj> <manifest.json> [ids...]
+```
+
+It does the three checks together and exits non-zero if any of them blocks, so it can
+gate a script:
+
+1. `run_crun.py --dry-run` — every prompt file and every ref resolves; dur and ref count in range.
+2. `ledger.py chain` — the last frame this clip chains from actually exists.
+3. `jev.py` + `packs/prompt-preflight.json` — the PROMPT-STANDARD checklist scored per shot
+   (face text with a plate, "cinematic", per-ref do-not-copy, CAST completeness, ENDING
+   STATE, positive-first AUDIO, beat count, moderation risk). ~$0.00008 a shot.
+
+**A moderation score above 0.70 BLOCKS** — thresholds come from the measured santan
+distribution (21 shots sat at 0.02–0.39; the one outlier at 0.95 was a real strike beat that
+would have 451'd mid-chain). Everything else warns.
+
+**Jev flags, you verify.** Jev is mid-pack on accuracy, so treat a low `conf` as an
+instruction to go and read the block yourself — that is exactly how a false negative on a
+narrator-VO AUDIO block was caught and the pack fixed, rather than the prompt.
+
+Add `--no-jev` when there is no key, `--strict` to make warnings block too.
 **This gate is the point of this agent.** A defect caught here costs nothing; the same defect caught after the render costs ~88 credits (≈ $0.43) for a 10 s 480p clip and ~5 minutes. Run all three steps and report before a single submit.
 
 ### 2a. Prompt pre-flight (`knowledge/PROMPT-STANDARD.md`)

@@ -1,6 +1,6 @@
 {
  "_comment": "Replaces hub_list_capabilities. Static; refresh weekly. Live Higgsfield unlimited status ALWAYS wins (models_explore unlim:true / web toggle).",
- "updated": "2026-09-23 — audit: defaults repointed to live lanes, dead lanes flagged enabled:false",
+ "updated": "2026-09-23 — decisions lane added; preflight.py is the pre-spend gate",
  "lanes": {
   "video": {
    "default": "seedance_fast_crun",
@@ -578,6 +578,31 @@
    "default": "ffmpeg",
    "tool": "tools/post.py",
    "capcut_export": "minimax skill clip-export (pyJianYingDraft on Windows)"
+  },
+  "decisions": {
+   "default": "jev_openrouter",
+   "_rule": "Typed TEXT decisions only — no vision. Used by tools/preflight.py as the pre-spend gate and on demand via the `jev` skill. Batch every question about one state into one call. Jev is mid-pack on accuracy; its confidence score is the signal to verify.",
+   "jev_openrouter": {
+    "vendor": "OpenRouter -> TypeSafe",
+    "model": "jev-latest",
+    "endpoint": "https://openrouter.ai/api/v1/systemone",
+    "key": "OPENROUTER_API_KEY (~/.config/keys_openrouter.env)",
+    "runner": "tools/jev.py",
+    "cost": "$0.042/M input, output free; ~$0.00008 per shot check",
+    "enabled": true,
+    "role": "PRIMARY decisions lane — reports a real per-call usage.cost",
+    "verified": "2026-09-23: live ping + 21-shot santan sweep for $0.002",
+    "knowledge_card": ".claude/skills/jev/SKILL.md"
+   },
+   "jev_typesafe": {
+    "vendor": "TypeSafe direct",
+    "model": "jev-latest",
+    "endpoint": "https://api.typesafe.ai/v1/systemone",
+    "key": "JEV_API_KEY (~/.config/keys_jev.env)",
+    "runner": "tools/jev.py --via typesafe",
+    "enabled": true,
+    "role": "fallback; same model and wire format, no per-call cost reported"
+   }
   }
  },
  "cost_lane_order": [
@@ -596,6 +621,6 @@
  },
  "_delivery_note": "device_commit_files re-muxes any file that starts with an MP4 header and caps at 20 MB — send whole MP4s only; for >20 MB, zip -0 then split the ZIP into 19 MB parts and cat on the PC (verified by md5).",
  "qc_gate": "After every image stage (anchors, keyframes) dispatch .claude/agents/qc.md: verify each image against script/storyboard/character sheets/scene grids (face, bindi/sindoor, earrings, clothing colour, props, set, blocking, standing/seated). Regenerate failing ids (₹0) until all-PASS. Only then Visual Gen.",
- "_version": "7.8",
+ "_version": "7.9",
  "_notes": {}
 }

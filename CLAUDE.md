@@ -41,9 +41,11 @@ inactive on 22 Sep 2026.
 6. Intimate content: embrace, jacket/strap slipping, silhouettes yes; nudity, exposed chest,
    sexual touching never. Moderation `451` fires on **input and output** — modest wording clears
    it.
-7. Always `--dry-run` before spend (resolves prompts and refs, prints what is missing) and
-   `--retry <ids>` for failures — a FAILED clip is otherwise skipped forever (its task id stays in
-   `crun_state.json`).
+7. **Run the gate before every render batch — `python3 tools/preflight.py <proj> <manifest>
+   [ids]`.** It is the only thing to remember: dry-run (prompts + refs resolve) · `ledger chain`
+   (the last-frame this clip chains from exists) · Jev prompt-preflight (the standard, scored).
+   Exit 0 = spend, exit 1 = fix first. Use `--retry <ids>` for failures — a FAILED clip is
+   otherwise skipped forever (its task id stays in `crun_state.json`).
 8. Finals: 1080p lanczos, 25 fps, `loudnorm I=-16`, H.264 `-pix_fmt yuv420p -movflags +faststart`.
 
 ## 3. PIPELINE
@@ -53,8 +55,9 @@ inactive on 22 Sep 2026.
    `python3 tools/run_atlas_img.py projects/<slug> docs/<slug>_jobs.json` → `refs/<id>.png`
 3. **QC the refs** → dispatch the `qc` agent; sheet them side by side vs script + wardrobe.
 4. **Prompts** → `python3 tools/santan_build2.py` → `docs/v_<id>.txt`, one per shot.
-5. **Clips** → `python3 tools/run_crun.py projects/<slug> docs/shots.json --dry-run`, then the
-   same without `--dry-run` → `renders/cr_<id>.mp4` + `renders/cr_<id>_last.png`.
+5. **Gate, then clips** → `python3 tools/preflight.py <slug> shots.json <ids>` (exit 0 required),
+   then `python3 tools/run_crun.py projects/<slug> shots.json <ids>`
+   → `renders/cr_<id>.mp4` + `renders/cr_<id>_last.png`.
 6. **QC the clips** → `ffmpeg -i clip.mp4 -vf "fps=1,scale=180:-1,tile=8x1" qc/<id>_tile.jpg` +
    whisper; then `python3 tools/ledger.py show <slug>`.
 7. **Assemble** → `python3 tools/post.py` (normalize 25 fps → concat →
@@ -75,9 +78,11 @@ clip use `--retry <ids>` — a FAILED clip is otherwise skipped forever because 
   transcript, before and after spend.
 - `.claude/agents/router.md` · `planner.md` · `executor.md` — intent routing, Stage Execution
   Plan authoring, stage execution. All three belong to the archived ported path, not live work.
-- `.claude/skills/jev` — **live.** Typed text decisions (`tools/jev.py`): triage a QC failure,
-  score a prompt against PROMPT-STANDARD before spend, classify a 451, rank a batch. Text only —
-  never for anything visual. Batch every question about one state into ONE call.
+- `.claude/skills/jev` — **live, and wired into the gate.** Typed text decisions
+  (`tools/jev.py`): `tools/preflight.py` calls it on every shot before spend. Also on demand for
+  triaging a QC failure, classifying a 451, ranking a batch. Text only — never for anything
+  visual. Batch every question about one state into ONE call. Jev flags, **you verify**: its
+  confidence number is the signal to go and read the thing yourself.
 
 ## 6. WHERE THINGS ARE
 
@@ -86,7 +91,7 @@ CLAUDE.md         this file — the live studio rules
 knowledge/        RUNBOOK · PROMPT-STANDARD · CHANGELOG · ARCHITECTURE-minimax-port
                   vendors/ · failures/ · templates/ · workflows/ · image-recipes/
 tools/            run_crun · run_atlas_img · santan_build2 · santan_run · ledger · post
-                  suno · qc_sheet · jev · bench_assemble · capabilities.json
+                  suno · qc_sheet · jev · preflight · bench_assemble · capabilities.json
 tools/_disabled/  runners of disabled lanes — they never sit in tools/ looking runnable
 projects/<slug>/  refs/ · docs/ · renders/ · final/
 server/           369 Studio web app (Docker, Render)

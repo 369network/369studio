@@ -196,3 +196,34 @@ auth header and transport are right, only the key is wrong.
 **Key:** official only, from console.typesafe.ai, into `~/.config/keys_jev.env` (chmod 600).
 Passed through a 0600 `curl -K` config, never argv. A jevai.org key does not work and must not be
 used. Cost logged to `renders/jev_log.jsonl`; `python3 tools/jev.py cost` totals it.
+
+## §U — The pre-spend gate (`tools/preflight.py`), 23 Sep 2026
+
+One command before every render batch. Nothing else to remember.
+
+```
+python3 tools/preflight.py <proj> <manifest.json> [ids...]
+        --no-jev    skip the typed checks (no key / offline)
+        --strict    warnings block too
+```
+
+Three checks, exit 0 = spend, exit 1 = fix first:
+1. `run_crun.py --dry-run` — every prompt file and ref resolves, dur and ref count in range.
+2. `ledger.py chain` — the last frame this clip chains from exists.
+3. `jev.py` + `packs/prompt-preflight.json` — the PROMPT-STANDARD checklist scored per shot.
+
+**Thresholds are measured, not chosen.** Across santan s6–s26 (21 shots): ref_jobs 2.57–2.98,
+cast 2.99–3.00, ending 0.80–0.98, audio 2.91–2.98, face 0.24–0.36, cinematic 0.11–0.15,
+moderation 0.02–0.39 — with a single outlier at **0.95** that turned out to be a real strike beat
+("hand flicks out toward NAINA… flinches back as if struck"). So **moderation > 0.70 BLOCKS**;
+everything else warns. A 451 mid-chain does not cost one clip, it stops every clip after it.
+
+Verified both directions: santan s6 passes clean at $0.000084 and prints the exact run command;
+a deliberately violent test shot is refused with `moderation_risk=1.98 conf=0.97` and exit 1.
+
+**Jev flags, you verify.** Its confidence number is the useful output. The first real run scored
+s6's AUDIO block 2.44 at conf **0.44**; reading the block showed it was complete and the *pack*
+was wrong — the ladder assumed a dialogue shot and s6 is narrator VO. Pack fixed, s6 → 2.90
+(conf 0.90), s2 dialogue control 2.95 (conf 0.95). Low confidence is the signal to go and look.
+
+Cost: about **$0.00008 per shot**. Gating all 101 santan scenes costs under a cent.
