@@ -93,6 +93,11 @@ if FORCE:
             print('force: clearing state for',sid,flush=True); S.pop(sid,None)
     json.dump(S,open(sp,'w'),indent=1)
 if DRY:
+    # A malformed manifest used to come out of the gate as a Python traceback, which reads like
+    # the tool is broken rather than the input. Report the missing key as a finding instead.
+    bad=[m.get('id','<no id>') for m in M if not m.get('prompt')]
+    if bad:
+        print(f"MANIFEST ERROR: no 'prompt' key on: {', '.join(map(str,bad))}",flush=True); sys.exit(2)
     for m in M:
         pf=f"{proj}/{m['prompt']}"
         print(f"{m['id']:10} dur={m.get('dur')} ar={m.get('ar','9:16')} refs={len(m.get('refs',[]))} "
@@ -172,6 +177,12 @@ while pending and time.time()-t0<3600:
         elif st=='failed':
             print('FAIL',sid,d,flush=True); S[sid]['error']=d; json.dump(S,open(sp,'w'),indent=1)
             led(sid,status='failed',error=json.dumps(d)[:280]); pending.discard(sid)
+            # Say what the failure MEANS and whether it was charged, at the moment it happens.
+            # Every one of these took a human diagnosis the first time round.
+            try:
+                import crun_errors
+                print(crun_errors.fmt(crun_errors.explain(d)),flush=True)
+            except Exception: pass
         else: print('poll',sid,st,flush=True)
     if pending: time.sleep(30)
 print('remaining',sorted(pending))

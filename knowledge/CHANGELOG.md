@@ -1,3 +1,58 @@
+## v8.0 — 28 Sep 2026 — the lane profile: model knowledge as data, and a gate that quotes
+
+Ported from a read of **Bench Studio** (MIT, `promptadvisers/bench-studio-public`), a local-first
+multi-model studio Nipam supplied. Two of its ideas are better than what we had; the rest is a
+different shape of problem and was deliberately left alone.
+
+**`knowledge/profiles/seedance_fast_crun.json` — the lane as a data file.** What the endpoint
+accepts, what we have actually bought, the measured price, and the prompt standard expressed as
+machine-readable `do` / `dont` / `required_blocks` / `reference_image_prompt_rules` rather than
+prose in a .md nothing can read. Bench's contribution is the *shape*: per-endpoint knowledge as
+hot-reloadable JSON with a `_meta` carrying provenance and corrections. The content is ours.
+
+**Every number in it is measured, and the gaps say so.** 480p is 8.824 credits/second because 22
+of our clips billed exactly 88.24 at 10 s and 2 billed exactly 44.30 at 5 s — zero variance, and a
+lone 15 s charge agrees at 8.81. The credit-to-USD rate comes from santan's own reconciliation.
+The prompt length band (607–680 words) is measured off the 26 santan v2 docs, all of which passed
+QC first time. Five things we have never actually done — 720p, 1080p, durations outside 5/10 s,
+more than 4 references, t2v — sit in `_meta.unverified_flags` and are **refused a quote** rather
+than guessed. A wrong multiplier is worse than no number; Bench learned that when a published rate
+understated one model by 294x.
+
+**`tools/lane_profile.py`** — the only reader. `show` prints what is known and what is not,
+`check` is the capability gate, `quote` prices a batch. Validated against reality: quoting santan
+returns 2294.24 credits ≈ **$11.18**, which is what it actually cost, to the cent.
+
+**The gate now refuses illegal requests and tells you the bill (hard rule 7).** `preflight.py`
+gained a capability check ahead of the dry-run — duration outside 4–15 s, an unoffered aspect
+ratio, more references than the lane accepts, mode A with no first frame, r2v with nothing
+anchoring identity. All of those used to reach the vendor and come back as a 422. It now also
+prints `this batch: N shots · X credits ≈ $Y` before the verdict, and marks any shot it cannot
+honestly price as UNQUOTABLE.
+
+**`tools/crun_errors.py` — what the failure means, and what it charged.** Eight rules, every one
+earned by a real incident, each recording the credits actually billed. `run_crun.py` prints the
+translation on every FAIL. The important one: a truncated download is the single case where
+`--retry` is *wrong* — the task id is still live, so re-downloading is free and resubmitting pays
+twice.
+
+**`run_crun.py --dry-run`** reports a manifest missing a `prompt` key as a finding instead of
+raising a traceback out of the gate.
+
+**Not ported, and why.** Bench's provider-OpenAPI→capability-manifest generator is the right
+answer for 37 endpoints across three providers; we have one lane, so a hand-written profile with
+honest provenance beats a scraper we would have to maintain. Its LLM prompt-rewriter is aimed at
+turning a casual idea into a prompt — our prompts are built by `santan_build2.py` against a fixed
+standard, which is a stronger guarantee than a rewrite. Its campaign runner advertises
+resume-after-crash and does not implement it (`beats.json` is written and never read); ours is
+genuinely resumable through `crun_state.json`. Its ledger's `entry_key` idempotency we already
+have as `PRIMARY KEY (proj, clip_id, attempt)` with `INSERT OR IGNORE`.
+
+**Worth taking later, not taken now:** its `capability_checks` evidence ladder, which upgrades a
+claim from "the schema says so" to "a real request was accepted", keyed on
+`(model_id, input_field, source)`. That is exactly how `unverified_flags` should eventually
+empty itself — automatically, from traffic, rather than by hand.
+
 ## v7.9 — 23 Sep 2026 — one pre-spend gate, Jev wired into it, santan delivered
 
 **The gate (new hard rule 7).** `tools/preflight.py <proj> <manifest> [ids]` is now the only thing

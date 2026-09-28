@@ -42,10 +42,12 @@ inactive on 22 Sep 2026.
    sexual touching never. Moderation `451` fires on **input and output** — modest wording clears
    it.
 7. **Run the gate before every render batch — `python3 tools/preflight.py <proj> <manifest>
-   [ids]`.** It is the only thing to remember: dry-run (prompts + refs resolve) · `ledger chain`
-   (the last-frame this clip chains from exists) · Jev prompt-preflight (the standard, scored).
-   Exit 0 = spend, exit 1 = fix first. Use `--retry <ids>` for failures — a FAILED clip is
-   otherwise skipped forever (its task id stays in `crun_state.json`).
+   [ids]`.** It is the only thing to remember: capability check (duration/resolution/aspect/refs
+   are legal for the lane) · dry-run (prompts + refs resolve) · `ledger chain` (the last-frame this
+   clip chains from exists) · Jev prompt-preflight (the standard, scored). **It prints what the
+   batch will cost before you say yes.** Exit 0 = spend, exit 1 = fix first. Use `--retry <ids>`
+   for failures — a FAILED clip is otherwise skipped forever (its task id stays in
+   `crun_state.json`), except a truncated download, where --retry would pay twice.
 8. Finals: 1080p lanczos, 25 fps, `loudnorm I=-16`, H.264 `-pix_fmt yuv420p -movflags +faststart`.
 
 ## 3. PIPELINE
@@ -89,9 +91,10 @@ clip use `--retry <ids>` — a FAILED clip is otherwise skipped forever because 
 ```
 CLAUDE.md         this file — the live studio rules
 knowledge/        RUNBOOK · PROMPT-STANDARD · CHANGELOG · ARCHITECTURE-minimax-port
-                  vendors/ · failures/ · templates/ · workflows/ · image-recipes/
+                  profiles/ · vendors/ · failures/ · templates/ · workflows/ · image-recipes/
 tools/            run_crun · run_atlas_img · santan_build2 · santan_run · ledger · post
-                  suno · qc_sheet · jev · preflight · bench_assemble · capabilities.json
+                  suno · qc_sheet · jev · preflight · lane_profile · crun_errors
+                  bench_assemble · capabilities.json
 tools/_disabled/  runners of disabled lanes — they never sit in tools/ looking runnable
 projects/<slug>/  refs/ · docs/ · renders/ · final/
 server/           369 Studio web app (Docker, Render)
@@ -105,6 +108,28 @@ renders.db        the clip ledger (gitignored, rebuildable)
   keep a `.tgz.part*` name.** Split with a bare name (`split … f.`) and the first part came back
   5,875 bytes larger, silently corrupting the join — 23 Sep 2026, hisaab-ep04 v3. Always compare
   each part's size on arrival, then md5 the extracted file against the cloud copy.
+
+## 6b. THE LANE PROFILE
+
+`knowledge/profiles/seedance_fast_crun.json` is the lane's knowledge as **data**: what the endpoint
+accepts, what we have actually bought, the measured price, and the prompt standard as machine-
+readable rules. `tools/lane_profile.py` is the only thing that reads it.
+
+```
+python3 tools/lane_profile.py show                      what the lane accepts, and what is unverified
+python3 tools/lane_profile.py quote <proj> <manifest>   what a batch will cost, before spending
+python3 tools/lane_profile.py check <proj> <manifest>   capability gate on its own
+```
+
+**The discipline is the point.** Every field is either *measured* from `renders.db` or listed in
+`_meta.unverified_flags`. 480p is priced at 8.824 cr/s because 24 of our own clips billed exactly
+that; 720p and 1080p are **unquotable**, because we have never bought one and a wrong multiplier is
+worse than no number. When a claim gets verified, move it out of `unverified_flags` in the same
+change.
+
+`tools/crun_errors.py` does the same for failures: it maps a raw vendor error to what it is, **what
+it charged**, and what to do. `run_crun.py` prints it on every FAIL. Add a rule whenever a new
+failure shape costs you an hour.
 
 ## 7. HOW TO CHANGE A RULE
 

@@ -621,6 +621,6 @@
  },
  "_delivery_note": "device_commit_files re-muxes any file that starts with an MP4 header and caps at 20 MB — send whole MP4s only; for >20 MB, zip -0 then split the ZIP into 19 MB parts and cat on the PC (verified by md5).",
  "qc_gate": "After every image stage (anchors, keyframes) dispatch .claude/agents/qc.md: verify each image against script/storyboard/character sheets/scene grids (face, bindi/sindoor, earrings, clothing colour, props, set, blocking, standing/seated). Regenerate failing ids (₹0) until all-PASS. Only then Visual Gen.",
- "_version": "7.9",
+ "_version": "8.0",
  "_notes": {}
 }

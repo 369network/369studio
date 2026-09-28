@@ -3,6 +3,7 @@
 
 Three checks that between them catch everything we have actually been burned by:
 
+  0. lane_profile.validate   duration/resolution/aspect/ref-count are legal for the lane
   1. run_crun.py --dry-run   every prompt file and every ref resolves, dur/refs in range
   2. ledger.py chain         the last-frame this clip chains from actually exists
   3. jev prompt-preflight    the PROMPT-STANDARD checklist, scored per shot
@@ -19,6 +20,7 @@ cinematic 0.11-0.15, moderation 0.02-0.39 with one real outlier at 0.95 that tur
 genuine strike beat. So a moderation score above 0.70 blocks; the rest warn.
 """
 import os, sys, json, subprocess, argparse
+import lane_profile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PACK = os.path.join(ROOT, ".claude", "skills", "jev", "packs", "prompt-preflight.json")
@@ -103,12 +105,24 @@ def main():
         print(f"BLOCK  dry-run failed: {err}"); sys.exit(1)
     blocked = chain(a.proj)
 
+    # Capability gate. The lane profile knows what this endpoint actually accepts and, just as
+    # importantly, what we have actually bought. Catching an illegal duration here costs nothing;
+    # catching it at the vendor costs a 422 and, on a bad day, a charge.
+    try:
+        prof = lane_profile.load()
+        shots = {m.get("id"): m for m in lane_profile.read_manifest(a.proj, a.manifest, set(a.ids))}
+    except Exception as e:
+        print(f"warn   lane profile unavailable ({e}) — capability check skipped\n")
+        prof, shots = None, {}
+
     blocks = warns = 0; cost = 0.0
     for sid, d in rows.items():
         issues = []
         if not d["prompt_ok"]: issues.append(("BLOCK", "prompt file missing"))
         if d["missing_refs"] not in ("[]", ""): issues.append(("BLOCK", f"missing refs {d['missing_refs']}"))
         if sid in blocked: issues.append(("BLOCK", "chain ref does not exist yet"))
+        if prof is not None and sid in shots:
+            issues.extend(lane_profile.validate(shots[sid], prof))
 
         if not a.no_jev and d["prompt_ok"]:
             pf = os.path.join(ROOT, "projects", a.proj, "docs", f"{sid}.txt")
@@ -131,6 +145,11 @@ def main():
             print(f"         {sev:5} {m}")
 
     print()
+    if prof is not None and shots:
+        qrows, cr, usd, unq = lane_profile.quote(list(shots.values()), prof)
+        line = f"this batch: {len(qrows)} shots · {cr} credits ≈ ${usd:.2f}"
+        if unq: line += f" · {unq} shot(s) UNQUOTABLE (resolution never bought — see the profile)"
+        print(line)
     if cost: print(f"jev: ${cost:.6f}")
     print(f"{blocks} blocking · {warns} warnings")
     if blocks or (a.strict and warns):
