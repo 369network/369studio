@@ -1,3 +1,52 @@
+## v8.1 — 28 Sep 2026 — three teardowns, and the gate learns to judge a set
+
+Read three systems Nipam supplied: **Bench Studio** (MIT), **juspay/director** (TS, unlicensed —
+ideas only), and Google's **Co-Director** (arXiv 2604.24842, Apache-2.0 reference code). Four
+things were worth taking. Each is in the tree; nothing was adopted wholesale.
+
+**A non-retryable error must be classified before a transient one — and ours was not.**
+juspay/director records losing two paid segments because `"must be 500 characters or less (got
+503)"` matched a bare `\b503\b` transient regex and got retried. We had the same hole: our own
+classifier read `"invalid duration: got 429 seconds"` as **rate limiting** and
+`"reference_images[403] is not a valid url"` as an **auth failure** — both of which tell you to
+`--retry`, which resubmits and pays again. Fixed with a `bad_request_not_retryable` rule matched
+first, and a `_code()` matcher that only fires on a number in status-code position. 11/11 on a
+replay of every failure shape we have hit plus the three that were wrong.
+
+**A point quote is the number that gets you overspent.** The gate now brackets: *best* (nothing
+retaken), *expected* (best plus the measured 1.5% re-spend rate — 2 of 132 paid clips in
+`renders.db` were ever paid for twice), and *ceiling* (every shot retaken once). santan reads
+best $11.18 · expected $11.35 · ceiling $22.36.
+
+**`tools/keyframe_audit.py` — judge the whole set in one look.** Co-Director's largest ablation
+delta, and free for us because images are ₹0. One indexed contact sheet plus a rubric brief, a
+five-part score out of 100, `problematic: [indices]` so only flagged frames get regenerated, and
+**champion semantics** — a later set replaces the best only if it scores strictly higher.
+Full detail in RUNBOOK §W.
+
+**Its first run found a real defect in a delivered film.** santan scored 88; frame [25], the
+closing shot, is an extreme macro of one tear-streaked eye where the shot's ENDING STATE asked for
+all three characters in the lamplight. The CAMERA line *"ending held on AAKASH's guarded eyes"* is
+what produced it — the same shape as hisaab-ep04 002-06's `极特写，只见双眼`. **New rule: never make
+a body part the camera's target; name the frame instead.** Exactly one of the 26 santan prompts
+carries that phrasing, and it is the one that failed.
+
+It also flagged frame [17] as too dark, and reading the prompt showed the model had done exactly
+what was asked — *"the street is empty and dark"*. Verify before you flag; the audit proposes, a
+human confirms.
+
+**Two prompt rules from Co-Director, both free.** A four-line contiguous-shot constraint appended
+to every CONSTRAINTS block (26/26 santan shots already covered two of the four lines), and
+*consensus prompting* — whenever a reference image is attached, also say in words what it contains
+and that its background is to be ignored.
+
+**Not taken:** video-db/Director (a chat shell over VideoDB's paid service — no resumability, no
+pre-spend validation, no ledger; its one durable idea, the Timeline/Track/Clip EDL JSON schema,
+lives in a different repo and is noted as a future capability). juspay/director as a dependency
+(TypeScript, no LICENSE, coupled to an in-house LLM router). Co-Director's multi-armed bandit —
+it is 4 full pipeline runs per film to search creative directions, which at our scale is ~4x the
+video spend for what their own numbers show is ~6 points over plain random sampling.
+
 ## v8.0 — 28 Sep 2026 — the lane profile: model knowledge as data, and a gate that quotes
 
 Ported from a read of **Bench Studio** (MIT, `promptadvisers/bench-studio-public`), a local-first

@@ -94,6 +94,7 @@ knowledge/        RUNBOOK · PROMPT-STANDARD · CHANGELOG · ARCHITECTURE-minima
                   profiles/ · vendors/ · failures/ · templates/ · workflows/ · image-recipes/
 tools/            run_crun · run_atlas_img · santan_build2 · santan_run · ledger · post
                   suno · qc_sheet · jev · preflight · lane_profile · crun_errors
+                  keyframe_audit
                   bench_assemble · capabilities.json
 tools/_disabled/  runners of disabled lanes — they never sit in tools/ looking runnable
 projects/<slug>/  refs/ · docs/ · renders/ · final/
@@ -126,6 +127,13 @@ python3 tools/lane_profile.py check <proj> <manifest>   capability gate on its o
 that; 720p and 1080p are **unquotable**, because we have never bought one and a wrong multiplier is
 worse than no number. When a claim gets verified, move it out of `unverified_flags` in the same
 change.
+
+`tools/keyframe_audit.py` judges the whole keyframe **set in one look**, not one image at a time
+— per-image QC structurally cannot see a character changing between shots or a room teleporting.
+Free for us (images are ₹0), and it runs before any Crun call. `sheet` builds one indexed contact
+sheet plus a rubric brief; `verdict` records a score with **champion semantics** — a later set only
+replaces the best if it scores strictly higher, so refinement can never quietly make the film
+worse. Gate: ≥90/100 and nothing flagged, at most 2 refinement rounds.
 
 `tools/crun_errors.py` does the same for failures: it maps a raw vendor error to what it is, **what
 it charged**, and what to do. `run_crun.py` prints it on every FAIL. Add a rule whenever a new

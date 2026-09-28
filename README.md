@@ -45,6 +45,7 @@ tools/run_crun.py             Crun Seedance FAST runner (manifest → renders/cr
 tools/preflight.py            THE GATE — capability + dry-run + chain + Jev, and the batch cost. Exit 0 = spend.
 tools/lane_profile.py         reads knowledge/profiles/*.json — show / check / quote (v8.0)
 tools/crun_errors.py          vendor error → what it is, what it charged, what to do (v8.0)
+tools/keyframe_audit.py       judge the whole keyframe SET in one look; champion semantics (v8.1)
 tools/run_viggle.py           viggle H3 runner (disabled lane, kept)
 tools/run_clips2.py           protoface retakes from the same manifest (mode A first/last, mode B refs)
 tools/run_flow_kf2.py         Flow keyframe batches with paste-fail retry (one queue!)

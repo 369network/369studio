@@ -146,10 +146,11 @@ def main():
 
     print()
     if prof is not None and shots:
-        qrows, cr, usd, unq = lane_profile.quote(list(shots.values()), prof)
-        line = f"this batch: {len(qrows)} shots · {cr} credits ≈ ${usd:.2f}"
-        if unq: line += f" · {unq} shot(s) UNQUOTABLE (resolution never bought — see the profile)"
-        print(line)
+        qrows, best, exp, ceil_, unq = lane_profile.quote(list(shots.values()), prof)
+        print(f"this batch: {len(qrows)} shots"
+              + (f" · {unq} UNQUOTABLE (resolution never bought — see the profile)" if unq else ""))
+        print(f"  best ${best[1]:.2f}   expected ${exp[1]:.2f}   ceiling ${ceil_[1]:.2f} "
+              f"(every shot retaken once)")
     if cost: print(f"jev: ${cost:.6f}")
     print(f"{blocks} blocking · {warns} warnings")
     if blocks or (a.strict and warns):

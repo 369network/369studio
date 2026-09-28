@@ -10,6 +10,11 @@
       "reference images beyond 4: the documented cap is 9 and the runner slices to 9, but the most we have ever actually sent is 4.",
       "t2v mode: the code path exists in run_crun.py and has never been run.",
       "credit-to-USD rate is derived from one project's own reconciliation ($11.18 / 2294.2 cr). It is not a published rate and may not include taxes or top-up fees."
+    ],
+    "sources_read": [
+      "Bench Studio (MIT, promptadvisers/bench-studio-public) — the profile-as-data shape, provenance in _meta",
+      "juspay/director (TS, unlicensed — ideas only) — cost bracket not a point quote; non-retryable classified before transient",
+      "Co-Director, Google, arXiv 2604.24842 (Apache-2.0 reference code) — contiguous-shot constraint, consensus prompting, joint keyframe audit"
     ]
   },
   "lane": "seedance_fast_crun",
@@ -121,7 +126,8 @@
       "Never retell the previous clip, and never chain across a location or time cut",
       "Never request multiple shots, cuts, dissolves or scene changes in one generation",
       "Never write nudity, exposed chest or sexual touching — moderation 451 fires on input AND output",
-      "Never restate a locked API parameter (duration, aspect ratio, resolution) as prose; set it on the request instead"
+      "Never restate a locked API parameter (duration, aspect ratio, resolution) as prose; set it on the request instead",
+      "Never make a body part the camera's target — 'ending held on his eyes', 'close on her hands', '极特写，只见双眼'. Seedance reads that as a macro of the part and loses the person and the room. Name the frame instead: 'a chest-up close-up of AAKASH, eyes to camera, the room soft behind him'. Measured twice: santan s26 delivered a single tear-streaked eye where ENDING STATE asked for three people in lamplight, and hisaab-ep04 002-06 delivered a rotated skin macro."
     ],
     "motion_vocabulary": [
       "fixed camera",
@@ -141,14 +147,26 @@
       "State the exact number of references attached. With exactly one reference, add: never refer to a second, third or background image; anything not in that one image must be described in words instead.",
       "Give a chained last-frame reference a deliberately narrow job: it controls only the room, its light and where people are standing — do not copy its framing.",
       "A character sheet is the identity anchor: 'the exact person shown in @ImageN, face and hair unchanged, wearing exactly the outfit from that plate'.",
-      "Always add the do-not-copy clause for sheet plates: do not copy the white studio background, the split-screen layout, the passport framing or the standing pose."
-    ]
+      "Always add the do-not-copy clause for sheet plates: do not copy the white studio background, the split-screen layout, the passport framing or the standing pose.",
+      "Consensus prompting: whenever a reference image is attached, also state in words what that image contains, and add that its background is to be ignored — only the subject carries over. Co-Director found text and image references must agree or the model splits the difference.",
+      "Never put a logo or graphic asset in the same reference bundle as a person or a product — they get blended. Send it as its own shot or its own pass."
+    ],
+    "required_constraint_block": {
+      "text": [
+        "This must be one contiguous shot starting from the first frame.",
+        "Do not add new shots, cuts, transitions or scene changes.",
+        "Do not introduce any new character, product or object.",
+        "Maintain the absolute visual identity of every person and object from the first frame."
+      ],
+      "why": "Four lines, appended verbatim to CONSTRAINTS on every shot. Taken from Google's Co-Director (arXiv 2604.24842, Apache-2.0 reference code), which uses it against exactly the failure we see: the model inventing a cut or a second person mid-clip. Costs nothing and targets our Failure Mode 7 directly."
+    }
   },
   "known_failures": {
     "451": "Moderation, fires on input AND output. Re-register modestly, keep the beat, add an explicit no-contact negative. Credits charged: 0.",
     "422_download_media": "Vendor could not fetch a reference URL. Usually a stale upload (uguu deletes after ~3 h), not a vendor fault. Credits charged: 0.",
     "422_context_deadline": "Transient vendor-side fetch timeout. Retry. Credits charged: 0.",
     "truncated_download": "File under 400 KB, or over the floor but with no moov atom. Task id is still live, so re-download costs nothing.",
-    "no_last_frame": "Breaks the chain silently. Check media_urls[1:] before trusting the clip."
+    "no_last_frame": "Breaks the chain silently. Check media_urls[1:] before trusting the clip.",
+    "body_part_macro": "A CAMERA or ENDING STATE line that targets eyes/hands/lips returns an extreme macro of that part, out of register with every other shot. Costs a full clip. Caught by the joint keyframe audit, not by per-clip QC — each macro passes on its own."
   }
 }

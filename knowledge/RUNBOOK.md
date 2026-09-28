@@ -277,3 +277,49 @@ FAIL. Eight rules, each earned here:
 | `rate_limited` · `insufficient_credits` · `auth` | 0 | resumable; nothing re-paid |
 
 Add a rule whenever a new failure shape costs an hour.
+
+
+## §W — Joint keyframe audit (`tools/keyframe_audit.py`), v8.1, 28 Sep 2026
+
+From Google's Co-Director (arXiv 2604.24842). Their ablation makes the case: removing joint
+keyframe verification cost more than removing anything else in their system. The idea is one line
+— **judge the whole set in a single call, not one image at a time** — and it catches a class our
+per-image QC structurally cannot: the protagonist rendered as a different person between shots,
+wardrobe that changes garment, a room that teleports. Each frame passes alone; the sequence does
+not.
+
+Free for us: images are ₹0, only video costs money, so this runs before any Crun call.
+
+```
+python3 tools/keyframe_audit.py sheet   <proj> [--glob PATTERN] [--cols N]
+python3 tools/keyframe_audit.py verdict <proj> --score N --flag 3,7 --fault prompt --note "..."
+python3 tools/keyframe_audit.py status  <proj>
+```
+
+`sheet` writes `docs/keyframe_sheet.jpg` (indexed tiles) and `docs/keyframe_brief.txt` (the rubric
+plus what each numbered frame was supposed to show, pulled from its shot doc). Read both together,
+then record a verdict.
+
+**Champion semantics.** A later attempt replaces the recorded best only if it scores strictly
+higher. Refinement regresses more often than people expect, and keeping the latest rather than the
+best is how a film gets worse one fix at a time.
+
+**Gate:** total ≥ 90/100 and nothing flagged. At most 2 refinement rounds, then decide by hand.
+
+### What its first real run found
+
+Run on santan's 26 delivered last frames. Score 88, one frame flagged.
+
+`[25] cr_s26_last` — the film's closing frame — is an extreme macro of one tear-streaked eye. Its
+shot doc's ENDING STATE asked for something else: *"AAKASH looks at NAINA. SAAS watches him. All
+three are still in the lamplight."* The CAMERA line is what produced it: *"…ending held on
+AAKASH's guarded eyes."*
+
+`[17] cr_s18_last` is nearly black, and I flagged it on sight — then read the prompt, which says
+*"The street is empty and dark… the warm light from inside is gone."* The model did exactly what
+was asked. Verify before you flag.
+
+**The rule that came out of it:** never make a body part the camera's target. Name the frame
+instead — "a chest-up close-up of AAKASH, eyes to camera, the room soft behind him". Measured
+twice: santan s26 and hisaab-ep04 002-06, whose Chinese prompt said `极特写，只见双眼`. Exactly one
+of the 26 santan prompts carries that phrasing, and it is the one that produced the macro.

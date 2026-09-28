@@ -93,7 +93,18 @@ def quote_one(shot, prof=None):
     cr = round(m["fixed"] + m["per_second"] * dur, 2)
     return cr, round(cr * pr["credit_usd"], 4), pr["confidence"]
 
+# Measured re-spend rate: 2 of 132 paid clips in renders.db were ever paid for twice.
+# A point quote is the number that gets you overspent (juspay/director makes this point well),
+# so quote a bracket — but derive every number, do not invent a safety factor.
+RESPEND_RATE = 2 / 132
+
 def quote(shots, prof=None):
+    """(rows, best, expected, ceiling, unquotable_count) — all in credits and USD.
+
+    best     nothing is retaken
+    expected best plus the measured historical re-spend rate
+    ceiling  every shot retaken once — the number to check a hard budget against
+    """
     p = prof or load()
     rows, tot_cr, tot_usd, unq = [], 0.0, 0.0, 0
     for s in shots:
@@ -101,7 +112,10 @@ def quote(shots, prof=None):
         rows.append((s.get("id", "?"), s.get("dur"), s.get("res") or p["capability"]["resolution"]["default"], cr, usd, conf))
         if cr is None: unq += 1
         else: tot_cr += cr; tot_usd += usd
-    return rows, round(tot_cr, 2), round(tot_usd, 4), unq
+    best = (round(tot_cr, 2), round(tot_usd, 4))
+    exp  = (round(tot_cr * (1 + RESPEND_RATE), 2), round(tot_usd * (1 + RESPEND_RATE), 4))
+    ceil_ = (round(tot_cr * 2, 2), round(tot_usd * 2, 4))
+    return rows, best, exp, ceil_, unq
 
 # ---------------------------------------------------------------- cli
 
@@ -142,12 +156,15 @@ def main():
 
     shots = read_manifest(a.proj, a.manifest, set(a.ids))
     if a.cmd == "quote":
-        rows, cr, usd, unq = quote(shots, p)
+        rows, best, exp, ceil_, unq = quote(shots, p)
         print(f"{'id':10}{'dur':>5}{'res':>8}{'credits':>10}{'usd':>9}  confidence")
         for sid, d, r, c_, u_, conf in rows:
             print(f"{sid:10}{str(d):>5}{r:>8}{('-' if c_ is None else f'{c_:.2f}'):>10}"
                   f"{('-' if u_ is None else f'{u_:.4f}'):>9}  {conf}")
-        print(f"\n{len(rows)} shots · {cr} credits ≈ ${usd:.2f}" + (f" · {unq} unquotable" if unq else ""))
+        print(f"\n{len(rows)} shots" + (f" · {unq} unquotable" if unq else ""))
+        print(f"  best      {best[0]:>9.2f} cr  ${best[1]:.2f}   nothing retaken")
+        print(f"  expected  {exp[0]:>9.2f} cr  ${exp[1]:.2f}   + measured {RESPEND_RATE*100:.1f}% re-spend rate")
+        print(f"  ceiling   {ceil_[0]:>9.2f} cr  ${ceil_[1]:.2f}   every shot retaken once")
         return
 
     bad = 0

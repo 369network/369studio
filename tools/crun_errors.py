@@ -9,12 +9,41 @@ generic ones, exactly as they are listed.
   python3 tools/crun_errors.py "<the error text>"
   from crun_errors import explain; explain(err_dict_or_str)
 """
-import sys, json, re
+import sys, json
+import re
+
+def _code(t, *codes):
+    """True only if one of these HTTP codes appears as a status code, not as some other number.
+
+    juspay/director lost two paid segments to exactly this: the message
+    "must be 500 characters or less (got 503)" matched a bare \\b503\\b transient regex, so a
+    non-retryable payload error was retried. Our own classifier had the same hole — "invalid
+    duration: got 429 seconds" read as rate limiting, and "reference_images[403]" read as an auth
+    failure. Both would have told you to --retry, which resubmits and pays again.
+    """
+    for c in codes:
+        if re.search(r"(?:^|[^0-9a-z])(?:http[ /]?)?(?:status|code|error)?[ :=]*" + c + r"(?![0-9])"
+                     r"(?=\s*(?:[:\-—,.)\]]|$|\s))", t):
+            return True
+    return False
+
 
 # (name, matcher, charged, what it is, what to do)
 RULES = [
+    ("bad_request_not_retryable",
+     lambda t: any(k in t for k in (
+         "invalid parameter", "invalid duration", "invalid resolution", "invalid aspect",
+         "is not a valid", "must be", "unsupported", "missing required", "validation error",
+         "exceeds the maximum", "out of range")),
+     "0 credits — and a retry will NOT help",
+     "The request itself is wrong: a parameter the endpoint will never accept. This is the one "
+     "class where retrying is actively harmful — it resubmits the same illegal payload and can "
+     "bill for the attempt. It is also the class the pre-spend gate exists to catch, so a "
+     "sighting here means `lane_profile` is missing a rule.",
+     "Fix the manifest, then re-run `tools/preflight.py`. Add the constraint to "
+     "knowledge/profiles/seedance_fast_crun.json so the gate blocks it next time. Do NOT --retry."),
     ("moderation_451",
-     lambda t: "451" in t or "moderation" in t or "content policy" in t or "risk control" in t,
+     lambda t: _code(t, "451") or "moderation" in t or "content policy" in t or "risk control" in t,
      "0 credits",
      "Moderation. Seedance screens the INPUT and the OUTPUT, so a clean prompt can still fail on "
      "what it generated.",
@@ -46,7 +75,7 @@ RULES = [
      "was charged."),
 
     ("rate_limited",
-     lambda t: "429" in t or "rate limit" in t or "too many request" in t,
+     lambda t: _code(t, "429") or "rate limit" in t or "too many request" in t,
      "0 credits",
      "Rate limited.",
      "Wait and re-run; the runner is resumable, so nothing is lost and nothing is re-paid."),
@@ -59,7 +88,7 @@ RULES = [
      "re-running resumes rather than re-paying."),
 
     ("auth",
-     lambda t: "401" in t or "403" in t or "unauthorized" in t or "invalid api key" in t,
+     lambda t: _code(t, "401", "403") or "unauthorized" in t or "invalid api key" in t,
      "0 credits",
      "Authentication rejected.",
      "Check ~/.config/keys_crun.env exists and is not empty. Never echo it. If it was pasted "
