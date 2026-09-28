@@ -1,3 +1,56 @@
+## v8.2 — 28 Sep 2026 — 284 repos triaged, five rules taken, one honest non-result
+
+Pulled the whole GithubSignals catalogue and read the seven repos that survived triage.
+
+**Getting the list.** Instagram is `robots.txt`-blocked, so scraping the account was the wrong
+route. The profile bio pointed at `githubsignals.io`, which exposes `/export.csv` (211 rows with
+stars and keywords) and a relay endpoint `/instagram/posts.json` (100 posts with `repo_urls`
+pre-extracted). Merged: **284 distinct repositories**, telegram 199 / instagram 86 / youtube 10.
+Keyword-scored against seven buckets, then the top candidates were actually read.
+
+**Taken into the lane profile:**
+- **Asymmetric identity gate** (sprite-gen, Apache-2.0). Side-specific features are identity, not
+  framing — which side the bindi, sindoor parting, nose ring, mangalsutra, earring or draped pallu
+  sits on. A mirrored plate is a QC failure, not a variation. Nothing in our pipeline currently
+  stops a model flipping a plate, and Hindi drama is full of one-sided marks.
+- **One pinned still owns identity** (sprite-gen). Approve a single frontal frame, then generate
+  every other angle and every video reference from *that* still — never panel-to-panel, which
+  compounds drift. Regenerating the anchor makes everything downstream stale.
+- **Named invariants per scene** (sceneflow, MIT). List the specific props, jewellery and garments
+  that must survive *this* shot. A generic CONTINUITY sentence is weaker than a named list.
+- **Never name a musical instrument in AUDIO** (scenario-labs, MIT). They measured a line that
+  delivered clean audio failing with `OutputAudioSensitiveContentDetected` once "a distant guitar"
+  was added. Name surfaces, cloth, breath, room.
+- **Never cut on a metronome** (onetake — ideas only, the repo is PolyForm **noncommercial**).
+  Equal shot lengths read as a slideshow; a frame always in motion has no rests.
+
+**And one rule change that did NOT earn its keep — recorded as such.** Scenario's sharpest finding
+is that a *prohibition* fails where a *definition* works: three runs of "no arrows, symbols or
+annotation marks of any kind in frame" still rendered the arrow, and deleting the clause changed
+only its colour. Our character-sheet rule is exactly that prohibition form — "do not copy the white
+studio background, the split-screen layout, the passport framing or the standing pose".
+
+I replaced it with the definitional form, then checked our own data and reverted to **additive**:
+26/26 santan shots have shipped clean with the prohibition alone, so we have no instance of the
+failure it fixes. Tested for non-regression — s1 re-rendered with the definition added (88.24 cr)
+came back clean, but so was the original. **That is a non-regression result and not evidence of
+improvement**, and the profile's `unverified_flags` now says so in those words. A single sample
+cannot separate "as good" from "better" against a clean baseline.
+
+**Skipped, with reasons:** `opusvideo/awesome-claude-video` and `yihui-dev/awesome-opus5-5-videos`
+are collections of prompts that make Claude *write animation code* (Canvas/Three.js/Remotion,
+rendered by Playwright) — 3 of 435 combined entries mention Seedance. Different craft, and both
+unlicensed. `scenario-labs/skills` needs their paid platform. `taruma/sceneflow` is YouTube-only.
+`feitangyuan/onetake` forbids commercial use.
+
+**Benchmark worth recording:** the 12-block standard was compared against two independent public
+standards — Scenario's 7-section Seedance shape and SceneFlow's 5-part scaffold — and is a superset
+of both. Our joint keyframe audit is also the better design than Scenario's per-asset quality gate,
+which their own skill admits averages defects away on composites ("a 12-panel storyboard scored 88
+and pass while one of its panels was physically impossible").
+
+Full catalogue: project doc `claude/githubsignals-catalogue.md` + the 284-row CSV.
+
 ## v8.1 — 28 Sep 2026 — three teardowns, and the gate learns to judge a set
 
 Read three systems Nipam supplied: **Bench Studio** (MIT), **juspay/director** (TS, unlicensed —

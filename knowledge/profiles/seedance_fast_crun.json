@@ -9,12 +9,18 @@
       "durations below 5 s and above 15 s: our runner clamps to 4-15 but we have only ever submitted 5 s and 10 s. 15 s is attested by exactly one charge (132.17 cr on afterhours/sd_04, which paid and returned no video).",
       "reference images beyond 4: the documented cap is 9 and the runner slices to 9, but the most we have ever actually sent is 4.",
       "t2v mode: the code path exists in run_crun.py and has never been run.",
-      "credit-to-USD rate is derived from one project's own reconciliation ($11.18 / 2294.2 cr). It is not a published rate and may not include taxes or top-up fees."
+      "credit-to-USD rate is derived from one project's own reconciliation ($11.18 / 2294.2 cr). It is not a published rate and may not include taxes or top-up fees.",
+      "The GUIDES-ARE-NOT-CONTENT definition is added on Scenario's measurement, not ours. Our own 26/26 santan shots were already clean with the prohibition alone. Tested for non-regression on 28 Sep: s1 re-rendered with the definition added (s1g, 88.24 cr) came back clean — no white backdrop, no panel divisions, no passport framing — but so was the original, so this is a non-regression result and NOT evidence of improvement. A single sample cannot separate 'as good' from 'better' when the baseline is already clean."
     ],
     "sources_read": [
       "Bench Studio (MIT, promptadvisers/bench-studio-public) — the profile-as-data shape, provenance in _meta",
       "juspay/director (TS, unlicensed — ideas only) — cost bracket not a point quote; non-retryable classified before transient",
-      "Co-Director, Google, arXiv 2604.24842 (Apache-2.0 reference code) — contiguous-shot constraint, consensus prompting, joint keyframe audit"
+      "Co-Director, Google, arXiv 2604.24842 (Apache-2.0 reference code) — contiguous-shot constraint, consensus prompting, joint keyframe audit",
+      "scenario-labs/skills (MIT text; needs their paid platform to run) — GUIDES ARE NOT CONTENT, the no-instrument audio rule",
+      "aldegad/sprite-gen (Apache-2.0) — the pinned-anchor gate and the asymmetric identity gate",
+      "taruma/sceneflow (MIT) — named invariants per scene; cue JSON as an adherence-QC artifact (not yet built)",
+      "feitangyuan/onetake (PolyForm NONCOMMERCIAL — ideas only, no code) — name what survives a boundary; shot-length variation",
+      "vigozhao/ai-visual-prompt-cookbook (MIT) — style_fidelity_anchors / source_content_to_avoid schema for free-lane image prompts"
     ]
   },
   "lane": "seedance_fast_crun",
@@ -118,7 +124,8 @@
       "Name in CAST every body that can appear in frame, and state that every figure, shoulder, hand or reflection at any frame edge belongs to one of them",
       "Write ENDING STATE as a specific description of where people are and how the room looks at the last frame — it is the next clip's continuity reference",
       "Write AUDIO positive-first: state the spoken language, name who is heard, say everyone else keeps their mouth closed, and only then list exclusions",
-      "Describe light by direction and quality, and let it be imperfect — clipped highlights, heavy shadows, real grain"
+      "Describe light by direction and quality, and let it be imperfect — clipped highlights, heavy shadows, real grain",
+      "Name the invariants for this specific scene, by object: which props, jewellery, marks and garments must survive this shot unchanged. A generic CONTINUITY sentence is weaker than a named list."
     ],
     "dont": [
       "Never describe a face, features, skin tone or hair when a reference plate is attached — text describing a face competes with the plate and loses",
@@ -127,7 +134,9 @@
       "Never request multiple shots, cuts, dissolves or scene changes in one generation",
       "Never write nudity, exposed chest or sexual touching — moderation 451 fires on input AND output",
       "Never restate a locked API parameter (duration, aspect ratio, resolution) as prose; set it on the request instead",
-      "Never make a body part the camera's target — 'ending held on his eyes', 'close on her hands', '极特写，只见双眼'. Seedance reads that as a macro of the part and loses the person and the room. Name the frame instead: 'a chest-up close-up of AAKASH, eyes to camera, the room soft behind him'. Measured twice: santan s26 delivered a single tear-streaked eye where ENDING STATE asked for three people in lamplight, and hisaab-ep04 002-06 delivered a rotated skin macro."
+      "Never make a body part the camera's target — 'ending held on his eyes', 'close on her hands', '极特写，只见双眼'. Seedance reads that as a macro of the part and loses the person and the room. Name the frame instead: 'a chest-up close-up of AAKASH, eyes to camera, the room soft behind him'. Measured twice: santan s26 delivered a single tear-streaked eye where ENDING STATE asked for three people in lamplight, and hisaab-ep04 002-06 delivered a rotated skin macro.",
+      "Never name a musical instrument in AUDIO. Scenario measured a line that delivered clean audio failing with OutputAudioSensitiveContentDetected once 'a distant guitar' was added. Name the surfaces, the cloth, the breath and the room instead.",
+      "Never cut a film on a metronome. Equal shot lengths read as a slideshow however good each shot is, and a frame that is always moving has no rests for the bursts to land against."
     ],
     "motion_vocabulary": [
       "fixed camera",
@@ -147,9 +156,11 @@
       "State the exact number of references attached. With exactly one reference, add: never refer to a second, third or background image; anything not in that one image must be described in words instead.",
       "Give a chained last-frame reference a deliberately narrow job: it controls only the room, its light and where people are standing — do not copy its framing.",
       "A character sheet is the identity anchor: 'the exact person shown in @ImageN, face and hair unchanged, wearing exactly the outfit from that plate'.",
-      "Always add the do-not-copy clause for sheet plates: do not copy the white studio background, the split-screen layout, the passport framing or the standing pose.",
+      "Keep the do-not-copy clause AND add a definition. The clause we have shipped — 'do not copy the white studio background, the split-screen layout, the passport framing or the standing pose' — has produced 26/26 clean santan shots, so it is not replaced. Scenario measured the bare prohibition form failing on their material (three runs of 'no arrows, symbols or annotation marks of any kind in frame' still rendered the arrow; deleting the clause changed only its colour) and found a definition worked where the prohibition did not. So add one sentence after it: 'The plate's white backdrop, panel divisions and standing pose are how the reference was photographed. They describe the person, they are not part of this scene.' Belt and braces — their finding is real on their material, and we have no instance of the failure on ours.",
       "Consensus prompting: whenever a reference image is attached, also state in words what that image contains, and add that its background is to be ignored — only the subject carries over. Co-Director found text and image references must agree or the model splits the difference.",
-      "Never put a logo or graphic asset in the same reference bundle as a person or a product — they get blended. Send it as its own shot or its own pass."
+      "Never put a logo or graphic asset in the same reference bundle as a person or a product — they get blended. Send it as its own shot or its own pass.",
+      "Asymmetric identity gate: side-specific features are identity, not framing — the side the bindi, sindoor parting, nose ring, mangalsutra pendant, earring, watch, scar or draped pallu sits on. State the side in words, and treat a mirrored version as a QC failure, not a variation. Nothing in the pipeline stops a model from flipping a plate.",
+      "One pinned still owns identity. Approve a single frontal frame, then generate every other angle and every video reference FROM that pinned still — never from another sheet panel, because panel-to-panel chaining compounds drift. If the anchor is regenerated, every downstream frame built on the old one is stale and must be rebuilt, not silently kept."
     ],
     "required_constraint_block": {
       "text": [
