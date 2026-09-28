@@ -12,7 +12,6 @@
       "credit-to-USD rate is derived from one project's own reconciliation ($11.18 / 2294.2 cr). It is not a published rate and may not include taxes or top-up fees."
     ]
   },
-
   "lane": "seedance_fast_crun",
   "vendor": "Crun (ByteDance Seedance 2.0 FAST)",
   "runner": "tools/run_crun.py",
@@ -21,39 +20,93 @@
     "i2v": "bytedance/seedance2-0-fast-i2v",
     "t2v": "bytedance/seedance2-0-fast-t2v"
   },
-
   "capability": {
-    "duration_s":   { "min": 4, "max": 15, "type": "int",
-                      "verified": [5, 10], "evidence": "measured — 2 clips at 5 s, 22 at 10 s, all succeeded" },
-    "resolution":   { "options": ["480p", "720p", "1080p"], "default": "480p",
-                      "verified": ["480p"], "evidence": "measured — 24/24 parameterised rows were 480p" },
-    "aspect_ratio": { "options": ["16:9", "9:16"], "default": "9:16",
-                      "verified": ["16:9", "9:16"], "evidence": "measured — 22 at 16:9, 2 at 9:16" },
-    "max_refs":     { "value": 9, "verified_up_to": 4,
-                      "evidence": "documented cap 9 (CLAUDE.md, runner slices refs[:9]); measured max actually submitted is 4" },
-    "audio":        { "default": true, "evidence": "documented — every clip we ship carries a generated audio track" },
-    "return_last_frame": { "default": true,
-                      "evidence": "measured — the last frame arrives as an extra entry in result.media_urls[1:], NOT a named field" }
+    "duration_s": {
+      "min": 4,
+      "max": 15,
+      "type": "int",
+      "verified": [
+        5,
+        10
+      ],
+      "evidence": "measured — 2 clips at 5 s, 22 at 10 s, all succeeded"
+    },
+    "resolution": {
+      "options": [
+        "480p",
+        "720p",
+        "1080p"
+      ],
+      "default": "480p",
+      "verified": [
+        "480p"
+      ],
+      "evidence": "measured — 24/24 parameterised rows were 480p"
+    },
+    "aspect_ratio": {
+      "options": [
+        "16:9",
+        "9:16"
+      ],
+      "default": "9:16",
+      "verified": [
+        "16:9",
+        "9:16"
+      ],
+      "evidence": "measured — 22 at 16:9, 2 at 9:16"
+    },
+    "max_refs": {
+      "value": 9,
+      "verified_up_to": 4,
+      "evidence": "documented cap 9 (CLAUDE.md, runner slices refs[:9]); measured max actually submitted is 4"
+    },
+    "audio": {
+      "default": true,
+      "evidence": "documented — every clip we ship carries a generated audio track"
+    },
+    "return_last_frame": {
+      "default": true,
+      "evidence": "measured — the last frame arrives as an extra entry in result.media_urls[1:], NOT a named field"
+    }
   },
-
   "pricing": {
-    "unit": "credits_per_second",
-    "rate_480p": 8.824,
+    "unit": "credits = fixed + per_second * duration",
+    "model_480p": {
+      "fixed": 0.367,
+      "per_second": 8.787
+    },
     "confidence": "measured",
-    "evidence": "22 clips at 10 s billed exactly 88.24 cr each (zero variance); 2 clips at 5 s billed exactly 44.30 cr. Both give 8.824 cr/s. One 15 s charge of 132.17 cr agrees (8.81 cr/s).",
+    "evidence": "Fitted to all three durations we have ever been billed for, at 480p: 5 s = 44.30 cr (n=2), 10 s = 88.24 cr (n=22, zero variance), 15 s = 132.17 cr (n=1). The two differences give a marginal rate of 8.788 and 8.786 cr/s, so there is a small fixed per-job component of about 0.367 cr. The model reproduces all three actuals to within 0.003 cr. A flat 8.824 cr/s — which is simply 88.24/10 — is off by 0.18 cr at both 5 s and 15 s, and was the first thing the v8.0 live test caught.",
     "credit_usd": 0.004873,
     "credit_usd_evidence": "santan reconciliation: 2294.2 cr recorded as $11.18",
-    "unquotable": ["720p", "1080p"],
+    "unquotable": [
+      "720p",
+      "1080p"
+    ],
     "unquotable_note": "We have never bought a frame above 480p. Refuse to quote rather than guess — a wrong multiplier is worse than no number."
   },
-
   "prompt": {
     "prompt_style": "Twelve named blocks in fixed order, one per line-group, written as plain declarative prose. No markdown, no bullet characters, no 'cinematic' vocabulary. The model reads it as a shot brief, not as a poem: concrete nouns, stated directions, real light.",
     "structure_template": "FORMAT · LOOK · REFERENCE ROLES · CAST · SETTING · STARTING STATE · TIMELINE · CAMERA · CONTINUITY · AUDIO · ENDING STATE · CONSTRAINTS",
-    "required_blocks": ["FORMAT","LOOK","REFERENCE ROLES","CAST","SETTING","STARTING STATE","TIMELINE","CAMERA","CONTINUITY","AUDIO","ENDING STATE","CONSTRAINTS"],
-    "ideal_length_words": [607, 680],
+    "required_blocks": [
+      "FORMAT",
+      "LOOK",
+      "REFERENCE ROLES",
+      "CAST",
+      "SETTING",
+      "STARTING STATE",
+      "TIMELINE",
+      "CAMERA",
+      "CONTINUITY",
+      "AUDIO",
+      "ENDING STATE",
+      "CONSTRAINTS"
+    ],
+    "ideal_length_words": [
+      607,
+      680
+    ],
     "length_evidence": "measured across the 26 santan v2 shot docs, all of which rendered clean on first QC. min 607, median 646, max 680. This is a house band, not a vendor limit.",
-
     "do": [
       "Give the shot exactly three beats for a 10 s clip (0-3.5 / 3.5-7 / 7-10), three to four for 15 s",
       "Give every @ImageN reference exactly one job AND a do-not-copy clause naming what to ignore in that plate",
@@ -71,10 +124,17 @@
       "Never restate a locked API parameter (duration, aspect ratio, resolution) as prose; set it on the request instead"
     ],
     "motion_vocabulary": [
-      "fixed camera", "slow push-in", "slow pull-out", "handheld follow",
-      "pan left", "pan right", "tilt down", "tilt up", "low-angle rise", "slow orbit"
+      "fixed camera",
+      "slow push-in",
+      "slow pull-out",
+      "handheld follow",
+      "pan left",
+      "pan right",
+      "tilt down",
+      "tilt up",
+      "low-angle rise",
+      "slow orbit"
     ],
-
     "reference_image_prompt_rules": [
       "Describe MOTION and ROLE, never appearance. Restating how a referenced person or object looks gives the model licence to re-invent it.",
       "Address references positionally as @Image1..@ImageN, matching the order they are sent in reference_images.",
@@ -84,7 +144,6 @@
       "Always add the do-not-copy clause for sheet plates: do not copy the white studio background, the split-screen layout, the passport framing or the standing pose."
     ]
   },
-
   "known_failures": {
     "451": "Moderation, fires on input AND output. Re-register modestly, keep the beat, add an explicit no-contact negative. Credits charged: 0.",
     "422_download_media": "Vendor could not fetch a reference URL. Usually a stale upload (uguu deletes after ~3 h), not a vendor fault. Credits charged: 0.",

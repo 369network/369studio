@@ -207,7 +207,9 @@ python3 tools/preflight.py <proj> <manifest.json> [ids...]
         --strict    warnings block too
 ```
 
-Three checks, exit 0 = spend, exit 1 = fix first:
+Four checks, exit 0 = spend, exit 1 = fix first:
+0. `lane_profile.validate` — duration, resolution, aspect ratio and ref count are legal for the
+   lane (v8.0, §V). Also prints what the batch will cost before the verdict.
 1. `run_crun.py --dry-run` — every prompt file and ref resolves, dur and ref count in range.
 2. `ledger.py chain` — the last frame this clip chains from exists.
 3. `jev.py` + `packs/prompt-preflight.json` — the PROMPT-STANDARD checklist scored per shot.
@@ -227,3 +229,51 @@ was wrong — the ladder assumed a dialogue shot and s6 is narrator VO. Pack fix
 (conf 0.90), s2 dialogue control 2.95 (conf 0.95). Low confidence is the signal to go and look.
 
 Cost: about **$0.00008 per shot**. Gating all 101 santan scenes costs under a cent.
+
+
+## §V — The lane profile and the error translator (v8.0, 28 Sep 2026)
+
+Ported from a read of Bench Studio (MIT). Two files.
+
+### `knowledge/profiles/seedance_fast_crun.json`
+
+The lane as **data**: what the endpoint accepts, what we have actually bought, the measured price,
+and the prompt standard as machine-readable rules. Read only by `tools/lane_profile.py`.
+
+```
+python3 tools/lane_profile.py show                      what is known, and what is not
+python3 tools/lane_profile.py check <proj> <manifest>   capability gate on its own
+python3 tools/lane_profile.py quote <proj> <manifest>   what a batch will cost
+```
+
+**Measured or flagged — there is no third state.**
+
+| measured from `renders.db` | evidence |
+|---|---|
+| 480p = **8.824 credits/second** | 22 clips billed exactly 88.24 at 10 s, 2 billed exactly 44.30 at 5 s, zero variance; one 15 s charge agrees at 8.81 |
+| credit → USD = **$0.004873** | santan reconciliation, 2294.2 cr = $11.18 |
+| prompt band **607–680 words**, 12 blocks | the 26 santan v2 docs, all clean on first QC |
+| aspect 16:9 and 9:16; refs verified to 4 | what we have actually had accepted |
+
+Five things sit in `_meta.unverified_flags` and are **refused a quote**: 720p, 1080p, durations
+outside 5/10 s, more than 4 references, t2v. A wrong multiplier is worse than no number — Bench
+found a published rate understating one model by 294x. **When a flag gets verified by a real
+accepted request, move it out in the same change.**
+
+Sanity check that must keep passing: quoting santan returns **2294.24 cr ≈ $11.18**, its real cost.
+
+### `tools/crun_errors.py`
+
+Raw vendor error → what it is, **what it charged**, what to do. `run_crun.py` prints it on every
+FAIL. Eight rules, each earned here:
+
+| kind | charged | the move |
+|---|---|---|
+| `moderation_451` | 0 | re-register modestly, keep the beat, add a no-contact negative. Do not just resubmit. |
+| `stale_reference_url` | 0 | `--retry` re-uploads; the URL cache now expires per host |
+| `context_deadline` | 0 | `--retry`; cleared on the second attempt both times |
+| `truncated_download` | 0 **to fix** | delete the file and re-run **without** `--retry` — the task id is live, so `--retry` pays twice |
+| `no_media_urls` | **check the ledger** | this is the shape that produced our one orphan charge (132.17 cr, no video) |
+| `rate_limited` · `insufficient_credits` · `auth` | 0 | resumable; nothing re-paid |
+
+Add a rule whenever a new failure shape costs an hour.

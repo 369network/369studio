@@ -1,0 +1,37 @@
+FORMAT
+5 seconds, 9:16 vertical, one continuous take, real time.
+
+LOOK
+Location documentary capture. Real room light, one warm practical against cooler ambient from a window. Visible grain, soft corners, slight motion blur. Skin keeps its texture. Nothing is perfectly sharp or perfectly exposed.
+
+REFERENCE ROLES
+The attached first frame is the exact starting image. It controls the person, the wardrobe, the room and the light. Continue from the moment it shows. Do not copy its framing as a still; the camera stays where it is.
+
+CAST
+One man, seated, the person in the first frame. He is the only body in shot. Any shoulder, hand, figure or reflection at any frame edge belongs to him. No one else enters.
+
+SETTING
+A quiet ground-floor bedroom in the afternoon. A window to his right with a tree beyond it, a pale green wall behind him.
+
+STARTING STATE
+He sits upright, eyes closed, head level, a beige shawl over a white kurta.
+
+TIMELINE
+0.0 to 1.7 seconds: he opens his eyes slowly and looks straight ahead.
+1.7 to 3.4 seconds: he takes one slow, heavy breath; his shoulders lift very slightly and settle.
+3.4 to 5.0 seconds: his gaze lowers a little and holds, tired and calm.
+
+CAMERA
+Fixed camera at his eye level, straight on. No push, no pan, no reframe for the whole take.
+
+CONTINUITY
+Face, hair, wardrobe and room exactly as the first frame throughout. The light does not change.
+
+AUDIO
+No one speaks. No dialogue, no narration, no whisper, no voice of any kind; his lips stay closed. Only quiet breathing and the low hum of a ceiling fan. No music, no street noise, no television or radio, no conversation from another room.
+
+ENDING STATE
+He sits in the same position as the first frame, eyes half open, gaze lowered, shawl and kurta unchanged, the afternoon window light unchanged.
+
+CONSTRAINTS
+One continuous take. No cuts, no dissolves, no scene change, no second person, no text or captions on screen.

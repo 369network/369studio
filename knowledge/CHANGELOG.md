@@ -39,6 +39,24 @@ twice.
 **`run_crun.py --dry-run`** reports a manifest missing a `prompt` key as a finding instead of
 raising a traceback out of the gate.
 
+**Live end-to-end test (28 Sep), and the two things it caught.** One 5 s clip rendered through the
+whole chain — gate, quote, render, ledger, QC — in `projects/_gatetest/`.
+
+- **The price model was wrong at the edges.** The profile shipped with a flat 8.824 cr/s, which is
+  just 88.24/10. The gate quoted the 5 s test at 44.12 while the ledger's measured 5 s actual is
+  44.30. Fitting all three durations we have ever been billed for — 5 s = 44.30, 10 s = 88.24,
+  15 s = 132.17 — gives marginal rates of 8.788 and 8.786, so there is a small **fixed per-job
+  component**: `credits = 0.367 + 8.787 × seconds`. That reproduces all three actuals to within
+  0.003 cr. Re-quoted: santan 2294.24 vs 2294.2 actual, the ep04 retake 44.3 vs 44.3 actual, and
+  the live test predicted **44.3 and was billed exactly 44.3**.
+- **`qc_sheet.py` was calling a design choice a defect.** It flagged every clip with no last frame,
+  so hisaab-ep04 — shot on a lane that never returned one — read **1/17** on a finished, delivered
+  episode. Noise like that trains you to ignore the checker. It now decides per project whether a
+  chain was ever intended (any last frame on disk, or any sidecar that asked for one) and per clip
+  whether that shot asked for one. Across every project: `_gatetest` 1/1, santan 26/26, ep04 17/17,
+  afterhours 13/13, kiskisse **7/9** — and that 7/9 is real, c6's last frame is genuinely missing
+  from a chained film. The fix hid nothing.
+
 **Not ported, and why.** Bench's provider-OpenAPI→capability-manifest generator is the right
 answer for 37 endpoints across three providers; we have one lane, so a hand-written profile with
 honest provenance beats a scraper we would have to maintain. Its LLM prompt-rewriter is aimed at

@@ -89,7 +89,8 @@ def quote_one(shot, prof=None):
     dur = int(shot.get("dur") or 0)
     if res in pr.get("unquotable", []) or res not in cap["resolution"]["verified"]:
         return None, None, "unquotable"
-    cr = round(pr["rate_480p"] * dur, 2)
+    m = pr["model_480p"]           # fixed + per_second*dur — there is a small per-job component
+    cr = round(m["fixed"] + m["per_second"] * dur, 2)
     return cr, round(cr * pr["credit_usd"], 4), pr["confidence"]
 
 def quote(shots, prof=None):
@@ -130,8 +131,9 @@ def main():
         print(f"  resolution  {c['resolution']['options']}   verified {c['resolution']['verified']}")
         print(f"  aspect      {c['aspect_ratio']['options']}")
         print(f"  refs        cap {c['max_refs']['value']}, verified up to {c['max_refs']['verified_up_to']}")
-        print(f"  price       {p['pricing']['rate_480p']} cr/s at 480p "
-              f"(~${p['pricing']['rate_480p']*p['pricing']['credit_usd']:.4f}/s) · {p['pricing']['confidence']}")
+        m = p["pricing"]["model_480p"]
+        print(f"  price       {m['fixed']} + {m['per_second']} cr/s at 480p "
+              f"(~${m['per_second']*p['pricing']['credit_usd']:.4f}/s) · {p['pricing']['confidence']}")
         print(f"  prompt      {len(p['prompt']['required_blocks'])} required blocks, "
               f"{p['prompt']['ideal_length_words'][0]}-{p['prompt']['ideal_length_words'][1]} words")
         print(f"\n  {len(p['_meta']['unverified_flags'])} unverified flags:")

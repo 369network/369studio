@@ -33,6 +33,36 @@ def probe(f):
             "h": next((s.get("height") for s in st if s.get("codec_type") == "video"), None),
             "audio": any(s.get("codec_type") == "audio" for s in st)}
 
+
+def chain_expected(renders_dir):
+    """Does this project chain at all? Decide once, per project, from evidence.
+
+    A missing last frame is only a defect where a chain was intended. hisaab-ep04 was shot on a
+    lane that never returned last frames and wrote no sidecars, so flagging all 17 clips made a
+    finished, delivered episode read 1/17 — noise that trains you to ignore the checker. Evidence,
+    in order: any last frame already on disk, or any sidecar that asked for one.
+    """
+    import glob
+    if glob.glob(os.path.join(renders_dir, "*_last.png")): return True
+    asked = False
+    for p in glob.glob(os.path.join(renders_dir, "*.mp4.json")):
+        try: d = json.load(open(p, encoding="utf-8"))
+        except Exception: continue
+        v = ((d.get("param") or {}).get("input") or {}).get("return_last_frame")
+        if v is True: asked = True
+    return asked
+
+def wanted_last_frame(renders_dir, cid):
+    """Per-clip override: a shot that explicitly asked for no last frame is not missing one."""
+    for name in (f"cr_{cid}.mp4.json", f"sd_{cid}.mp4.json", f"{cid}.mp4.json"):
+        p = os.path.join(renders_dir, name)
+        if not os.path.exists(p): continue
+        try: d = json.load(open(p, encoding="utf-8"))
+        except Exception: return True
+        v = ((d.get("param") or {}).get("input") or {}).get("return_last_frame")
+        if v is not None: return bool(v)
+    return True
+
 def black_tail(f):
     """A clip that ends in black reads to the viewer as a bug — we shipped one at 1:29 once."""
     r = sh("ffmpeg", "-v", "info", "-i", f, "-vf", "blackdetect=d=0.5:pic_th=0.98", "-f", "null", "-")
@@ -86,7 +116,8 @@ def main():
                 if en is None or en >= p["secs"] - 0.2:
                     issues.append(f"BLACK TAIL from {st:.1f}s"); break
         lf = os.path.join(rd, f"cr_{cid}_last.png")
-        if not os.path.exists(lf): issues.append("no last-frame (chain breaks here)")
+        if not os.path.exists(lf) and chain_expected(rd) and wanted_last_frame(rd, cid):
+            issues.append("no last-frame (chain breaks here)")
         rows.append((cid, n, p, issues))
         if issues: bad += 1
 
